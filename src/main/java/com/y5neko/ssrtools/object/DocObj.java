@@ -3,6 +3,9 @@ package com.y5neko.ssrtools.object;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 文档对象
+ */
 public class DocObj {
     private String customerName = "XX客户";
     private String isFirsrTest = "初测";

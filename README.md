@@ -36,9 +36,7 @@
 
 ### 自定义漏洞库
 
-![img_1.png](img/img_1.png)
-
-![img_2.png](img/img_2.png)
+![img5.png](img/img_5.png)
 
 ### 漏洞录入
 

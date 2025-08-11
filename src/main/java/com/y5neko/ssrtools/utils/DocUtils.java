@@ -37,7 +37,7 @@ public class DocUtils {
      * @return 一级标题的原始内容
      */
     public static String firstHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(FIRST_LEVEL_HEADING_TEPMLATE_PATH);
+        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FIRST_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
                 .replaceAll("\\{\\{\\{\\{\\{first_heading_text}}}}}",text)
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
@@ -50,7 +50,7 @@ public class DocUtils {
      * @return 二级标题的原始内容
      */
     public static String secondHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(SECOND_LEVEL_HEADING_TEPMLATE_PATH);
+        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(SECOND_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
                 .replaceAll("\\{\\{\\{\\{\\{second_heading_text}}}}}",text)
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
@@ -63,7 +63,7 @@ public class DocUtils {
      * @return 三级标题的原始内容
      */
     public static String thirdHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(THIRD_LEVEL_HEADING_TEPMLATE_PATH);
+        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(THIRD_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
                 .replaceAll("\\{\\{\\{\\{\\{third_heading_text}}}}}",text)
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
@@ -76,7 +76,7 @@ public class DocUtils {
      * @return 四级标题的原始内容
      */
     public static String fourthHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(FOURTH_LEVEL_HEADING_TEPMLATE_PATH);
+        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FOURTH_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
                 .replaceAll("\\{\\{\\{\\{\\{fourth_heading_text}}}}}",text)
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
@@ -89,7 +89,7 @@ public class DocUtils {
      * @return 正文文本的原始内容
      */
     public static String normalTextGen(String text) {
-        String contentTemplate = FileUtils.readFile(NORMAL_TEXT_TEPMLATE_PATH);
+        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(NORMAL_TEXT_TEPMLATE_PATH));
 
         // 检测是否存在多行
         if (text.contains("\n")) {
@@ -113,7 +113,7 @@ public class DocUtils {
      * @return 报告模板原始内容
      */
     public static String contentGen(DocObj docObj) {
-        String contentTemplates = FileUtils.readFile(DOC_TEMPLATE_PATH +"/word/document.xml");
+        String contentTemplates = FileUtils.readFile(MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) +"/word/document.xml");
 
         return contentTemplates
                 .replaceAll("\\{\\{\\{\\{\\{customer_name}}}}}", docObj.getCustomerName())
@@ -197,30 +197,30 @@ public class DocUtils {
      * @return 文档路径
      */
     public static String docGen(String docTemplatesPath, String docContent, DocObj docObj) throws IOException {
-        String path = DOC_TEMPLATE_PATH;
+        String path = MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH);
         if (docTemplatesPath != null) {
             path = docTemplatesPath;
         }
 
         // 清空缓存目录
-        FileUtils.cleanDirectory(TEMP_DIR);
+        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
 
         // 复制到缓存目录
-        FileUtils.copyFolder(path, TEMP_DIR + "/doc");
+        FileUtils.copyFolder(path, MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc");
 
         // 替换document.xml
-        FileUtils.overwrite(TEMP_DIR + "/doc/word/document.xml", docContent, StandardCharsets.UTF_8);
+        FileUtils.overwrite(MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word/document.xml", docContent, StandardCharsets.UTF_8);
 
         // 生成文档
         List<String> sources = Arrays.asList(
-                TEMP_DIR + "/doc/_rels",
-                TEMP_DIR + "/doc/customXml",
-                TEMP_DIR + "/doc/docProps",
-                TEMP_DIR + "/doc/word",
-                TEMP_DIR + "/doc/[Content_Types].xml"
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/_rels",
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/customXml",
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/docProps",
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word",
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/[Content_Types].xml"
         );
 
-        String reportPath = DOC_OUTPUT_DIR + File.separator +
+        String reportPath = MiscUtils.getAbsolutePath(DOC_OUTPUT_DIR) + File.separator +
                 docObj.getCustomerName() +
                 ("复测".equals(docObj.getIsFirsrTest()) ? "渗透测试复测报告" : "渗透测试报告") +
                 docObj.getReportYear() +
@@ -232,8 +232,8 @@ public class DocUtils {
         ZipUtils.zipMultiple(sources, reportPath);
 
         // 再次清空
-        FileUtils.cleanDirectory(TEMP_DIR);
+        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
 
-        return System.getProperty("user.dir") + File.separator + reportPath;
+        return reportPath;
     }
 }

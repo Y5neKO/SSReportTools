@@ -35,6 +35,15 @@
       </plugin>
     </plugins>
   </build>
+  <dependencies>
+    <dependency>
+      <groupId>scenicView</groupId>
+      <artifactId>scenicView</artifactId>
+      <version>8.7.0</version>
+      <scope>system</scope>
+      <systemPath>${basedir}/src/lib/scenicView.jar</systemPath>
+    </dependency>
+  </dependencies>
   <properties>
     <mainClass>com.y5neko.ssrtools.GUI</mainClass>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

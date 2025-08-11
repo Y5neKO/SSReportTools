@@ -3,6 +3,9 @@ package com.y5neko.ssrtools.models.docdata;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 系统信息模型
+ */
 public class SystemInfo {
     private String systemName;
     private List<Vulnerability> vulnerabilities = new ArrayList<>();

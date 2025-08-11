@@ -1,8 +1,11 @@
 package com.y5neko.ssrtools.ui;
 
+import com.y5neko.ssrtools.utils.LogUtils;
+import com.y5neko.ssrtools.utils.MiscUtils;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -24,12 +27,17 @@ import java.util.*;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.VULN_WIKI_FILE_PATH;
 
+/**
+ * 漏洞库编辑器
+ */
 public class VulnEditorWindow {
     private Stage stage;
 
     private TableView<Vulnerability> table;
-    private final ObservableList<Vulnerability> data = FXCollections.observableArrayList();
+    private final ObservableList<Vulnerability> masterData = FXCollections.observableArrayList();
+    private final FilteredList<Vulnerability> filteredData = new FilteredList<>(masterData, p -> true);
 
+    private TextField filterField;
     private TextField nameField;
     private TextField harmField;
     private TextField riskField;
@@ -43,11 +51,17 @@ public class VulnEditorWindow {
     private Button btnOverwrite;
     private Button btnExport;
 
+    /**
+     * 构造函数
+     */
     public VulnEditorWindow() {
         initControls();
         stage = new Stage();
     }
 
+    /**
+     * 显示漏洞库编辑器窗口
+     */
     public void show() {
         stage.setTitle("漏洞库编辑器");
         BorderPane root = layoutUI();
@@ -57,7 +71,13 @@ public class VulnEditorWindow {
         loadDefaultVulnerabilities();
     }
 
+    /**
+     * 初始化控件
+     */
     private void initControls() {
+        filterField = new TextField();
+        filterField.setPromptText("根据漏洞名称过滤...");
+
         table = new TableView<>();
         table.setPlaceholder(new Label("暂无漏洞"));
 
@@ -79,6 +99,10 @@ public class VulnEditorWindow {
         btnExport = new Button("另存为 YAML");
     }
 
+    /**
+     * 布局UI
+     * @return 根节点
+     */
     private BorderPane layoutUI() {
         // 表格列配置
         TableColumn<Vulnerability, String> nameCol = new TableColumn<>("漏洞名称");
@@ -99,7 +123,16 @@ public class VulnEditorWindow {
         harmCol.setPrefWidth(350);
 
         table.getColumns().setAll(nameCol, riskCol, harmCol);
-        table.setItems(data);
+
+        // 用过滤列表绑定表格
+        table.setItems(filteredData);
+
+        VBox tableBox = new VBox(5);
+        tableBox.setPadding(new Insets(8));
+        tableBox.getChildren().addAll(filterField, table);
+
+        // 设置表格垂直扩展
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         VBox form = new VBox(8);
         form.setPadding(new Insets(8));
@@ -116,11 +149,15 @@ public class VulnEditorWindow {
         VBox.setVgrow(suggestArea, Priority.ALWAYS);
 
         BorderPane root = new BorderPane();
-        root.setCenter(table);
+        root.setCenter(tableBox);
         root.setRight(form);
         return root;
     }
 
+    /**
+     * 绑定事件
+     * @param stage 窗口
+     */
     private void bindEvents(Stage stage) {
         // 表格交互
         table.setOnMouseClicked(e -> {
@@ -128,6 +165,15 @@ public class VulnEditorWindow {
         });
         table.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) loadSelectedToForm();
+        });
+
+        // 过滤输入框监听
+        filterField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String filter = newVal == null ? "" : newVal.trim().toLowerCase();
+            filteredData.setPredicate(vuln -> {
+                if (filter.isEmpty()) return true;
+                return vuln.getName().toLowerCase().contains(filter);
+            });
         });
 
         // 按钮事件
@@ -142,43 +188,54 @@ public class VulnEditorWindow {
         });
     }
 
+    /**
+     * 加载默认漏洞库
+     */
     private void loadDefaultVulnerabilities() {
-        File file = new File(VULN_WIKI_FILE_PATH);
+        File file = new File(MiscUtils.getAbsolutePath(VULN_WIKI_FILE_PATH));
         if (!file.exists()) {
-            System.out.println("默认漏洞库文件不存在：" + VULN_WIKI_FILE_PATH);
+            System.out.println("默认漏洞库文件不存在：" + MiscUtils.getAbsolutePath(VULN_WIKI_FILE_PATH));
             return;
         }
         loadYaml(file);
     }
 
+    /**
+     * 加载YAML文件
+     * @param file 文件
+     */
     private void loadYaml(File file) {
         try (InputStream is = Files.newInputStream(file.toPath())) {
             Yaml yaml = new Yaml();
             Object obj = yaml.load(is);
-            data.clear();
+            masterData.clear();
             if (obj instanceof Map) {
                 Map<?, ?> map = (Map<?, ?>) obj;
                 Object vs = map.get("vulnerabilities");
                 if (vs instanceof List) {
                     for (Object item : (List<?>) vs) {
                         if (item instanceof Map) {
-                            data.add(Vulnerability.fromMap((Map<?, ?>) item));
+                            masterData.add(Vulnerability.fromMap((Map<?, ?>) item));
                         }
                     }
                 }
             } else if (obj instanceof List) {
                 for (Object item : (List<?>) obj) {
                     if (item instanceof Map) {
-                        data.add(Vulnerability.fromMap((Map<?, ?>) item));
+                        masterData.add(Vulnerability.fromMap((Map<?, ?>) item));
                     }
                 }
             }
         } catch (Exception ex) {
             showAlert(Alert.AlertType.ERROR, "加载失败", ex.getMessage());
-            System.out.println("加载失败：" + ex.getMessage());
+            LogUtils.error(VulnEditorWindow.class, "加载失败" + ex.getMessage());
         }
     }
 
+    /**
+     * 保存YAML文件
+     * @param file 文件
+     */
     private void saveYaml(File file) {
         try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             DumperOptions options = new DumperOptions();
@@ -202,7 +259,7 @@ public class VulnEditorWindow {
 
             Map<String, Object> root = new LinkedHashMap<>();
             List<Object> list = new ArrayList<>();
-            for (Vulnerability v : data) {
+            for (Vulnerability v : masterData) {
                 list.add(v.toMap());
             }
             root.put("vulnerabilities", list);
@@ -211,19 +268,26 @@ public class VulnEditorWindow {
             showAlert(Alert.AlertType.INFORMATION, "保存成功", "漏洞库已保存至：" + file.getAbsolutePath());
         } catch (Exception ex) {
             showAlert(Alert.AlertType.ERROR, "保存失败", ex.getMessage());
-            System.out.println("保存失败：" + ex.getMessage());
+            LogUtils.error(VulnEditorWindow.class, "保存失败" + ex.getMessage());
         }
     }
 
+    /**
+     * 覆盖保存默认漏洞库
+     */
     private void onOverwriteYaml() {
-        File file = new File(VULN_WIKI_FILE_PATH);
+        File file = new File(MiscUtils.getAbsolutePath(VULN_WIKI_FILE_PATH));
         if (!file.exists()) {
-            showAlert(Alert.AlertType.ERROR, "错误", "默认漏洞库文件不存在：" + VULN_WIKI_FILE_PATH);
+            showAlert(Alert.AlertType.ERROR, "错误", "默认漏洞库文件不存在：" + MiscUtils.getAbsolutePath(VULN_WIKI_FILE_PATH));
             return;
         }
         saveYaml(file);
     }
 
+    /**
+     * 另存为YAML文件
+     * @param stage 窗口
+     */
     private void onSaveYaml(Stage stage) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("另存为 YAML 文件");
@@ -234,6 +298,10 @@ public class VulnEditorWindow {
         }
     }
 
+    /**
+     * 加载YAML文件
+     * @param stage 窗口
+     */
     private void onLoadYaml(Stage stage) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("打开 YAML 文件");
@@ -244,6 +312,9 @@ public class VulnEditorWindow {
         }
     }
 
+    /**
+     * 加载选中漏洞到表单
+     */
     private void loadSelectedToForm() {
         Vulnerability selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) return;
@@ -255,14 +326,20 @@ public class VulnEditorWindow {
         suggestArea.setText(selected.getSuggustion());
     }
 
+    /**
+     * 新增漏洞
+     */
     private void onNew() {
         Vulnerability v = new Vulnerability("新漏洞", "", "", "中危", "");
-        data.add(v);
+        masterData.add(v);
         table.getSelectionModel().select(v);
         loadSelectedToForm();
         nameField.requestFocus();
     }
 
+    /**
+     * 保存漏洞
+     */
     private void onSave() {
         Vulnerability selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -273,7 +350,7 @@ public class VulnEditorWindow {
                     riskField.getText(),
                     suggestArea.getText()
             );
-            data.add(v);
+            masterData.add(v);
             table.getSelectionModel().select(v);
         } else {
             selected.setName(nameField.getText());
@@ -285,13 +362,22 @@ public class VulnEditorWindow {
         }
     }
 
+    /**
+     * 删除漏洞
+     */
     private void onDelete() {
         Vulnerability selected = table.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            data.remove(selected);
+            masterData.remove(selected);
         }
     }
 
+    /**
+     * 显示提示框
+     * @param type 类型
+     * @param title 标题
+     * @param msg 消息
+     */
     private void showAlert(Alert.AlertType type, String title, String msg) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
@@ -300,6 +386,9 @@ public class VulnEditorWindow {
         alert.showAndWait();
     }
 
+    /**
+     * 漏洞模型
+     */
     public static class Vulnerability {
         private final SimpleStringProperty name = new SimpleStringProperty("");
         private final SimpleStringProperty harm = new SimpleStringProperty("");
@@ -307,6 +396,14 @@ public class VulnEditorWindow {
         private final SimpleStringProperty risklevel = new SimpleStringProperty("");
         private final SimpleStringProperty suggustion = new SimpleStringProperty("");
 
+        /**
+         * 构造函数
+         * @param name 名称
+         * @param harm 危害
+         * @param description 描述
+         * @param risklevel 风险等级
+         * @param suggustion 建议
+         */
         public Vulnerability(String name, String harm, String description, String risklevel, String suggustion) {
             this.name.set(name);
             this.harm.set(harm);
@@ -326,6 +423,10 @@ public class VulnEditorWindow {
         public String getSuggustion() { return suggustion.get(); }
         public void setSuggustion(String v) { suggustion.set(v); }
 
+        /**
+         * 转换为Map
+         * @return Map
+         */
         public Map<String, Object> toMap() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("name", getName());
@@ -336,6 +437,11 @@ public class VulnEditorWindow {
             return m;
         }
 
+        /**
+         * 从Map创建漏洞
+         * @param rawMap Map
+         * @return 漏洞
+         */
         @SuppressWarnings("unchecked")
         public static Vulnerability fromMap(Map<?, ?> rawMap) {
             Map<Object, Object> m = (Map<Object, Object>) rawMap;

@@ -16,4 +16,9 @@ public class GlobalConfig {
     public static final String THIRD_LEVEL_HEADING_TEPMLATE_PATH = "components/third_level_heading.txt";
     public static final String FOURTH_LEVEL_HEADING_TEPMLATE_PATH = "components/fourth_level_heading.txt";
     public static final String NORMAL_TEXT_TEPMLATE_PATH = "components/normal_text.txt";
+
+    public static final String[] REQUIRED_DIRS = {
+        TEMP_DIR,
+        DOC_OUTPUT_DIR
+    };
 }

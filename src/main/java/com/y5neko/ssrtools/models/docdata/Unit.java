@@ -3,6 +3,9 @@ package com.y5neko.ssrtools.models.docdata;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 单位模型
+ */
 public class Unit {
     private String unitName;
     private List<SystemInfo> systems = new ArrayList<>();

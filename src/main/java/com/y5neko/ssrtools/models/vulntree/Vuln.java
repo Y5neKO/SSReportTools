@@ -1,6 +1,8 @@
 package com.y5neko.ssrtools.models.vulntree;
 
-// 单个漏洞
+/**
+ * 漏洞条目模型
+ */
 public class Vuln {
     public String name;
     public String desc;

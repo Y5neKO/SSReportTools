@@ -7,8 +7,10 @@ import java.util.*;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.DOC_TEMPLATE_PATH;
 
+/**
+ * 压缩工具类
+ */
 public class ZipUtils {
-
     /**
      * 压缩文件或文件夹为ZIP
      * @param sourcePath 要压缩的文件/文件夹路径
@@ -58,7 +60,7 @@ public class ZipUtils {
             }
             zos.closeEntry();
         } catch (IOException e) {
-            throw new UncheckedIOException("添加文件到ZIP失败: " + filePath, e);
+            LogUtils.error(ZipUtils.class, "添加文件到ZIP失败：" + e.getMessage());
         }
     }
 
@@ -95,18 +97,18 @@ public class ZipUtils {
 
     public static void main(String[] args) {
         List<String> sources = Arrays.asList(
-                DOC_TEMPLATE_PATH + "/_rels",
-                DOC_TEMPLATE_PATH + "/customXml",
-                DOC_TEMPLATE_PATH + "/docProps",
-                DOC_TEMPLATE_PATH + "/word",
-                DOC_TEMPLATE_PATH + "/[Content_Types].xml"
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/_rels",
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/customXml",
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/docProps",
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/word",
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/[Content_Types].xml"
         );
 
         try {
             ZipUtils.zipMultiple(sources, "sss.docx");
             System.out.println("多文件压缩完成");
         } catch (IOException e) {
-            System.err.println("压缩失败: " + e.getMessage());
+            LogUtils.error(ZipUtils.class, "压缩失败：" + e.getMessage());
         }
     }
 }

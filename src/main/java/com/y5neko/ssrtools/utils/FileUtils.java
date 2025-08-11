@@ -13,6 +13,9 @@ import java.nio.file.StandardCopyOption;
 
 import java.io.File;
 
+/**
+ * 文件工具类
+ */
 public class FileUtils {
     /**
      * 读取文件为字符串
@@ -39,7 +42,7 @@ public class FileUtils {
             }
 
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            LogUtils.error(FileUtils.class, "读取文件失败：" + e.getMessage());
         }
 
         return content.toString();
@@ -71,7 +74,7 @@ public class FileUtils {
                             Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING); // 复制文件
                         }
                     } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+                        LogUtils.error(FileUtils.class, "复制文件失败：" + e.getMessage());
                     }
                 });
     }
@@ -113,7 +116,7 @@ public class FileUtils {
             }
         } catch (IOException e) {
             Files.deleteIfExists(tempFile); // 清理临时文件
-            throw e;
+            LogUtils.error(FileUtils.class, "覆盖文件失败：" + e.getMessage());
         }
     }
 }

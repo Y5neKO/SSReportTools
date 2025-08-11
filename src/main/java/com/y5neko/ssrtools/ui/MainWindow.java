@@ -11,6 +11,8 @@ import com.y5neko.ssrtools.models.docdata.Vulnerability;
 import com.y5neko.ssrtools.object.DocObj;
 import com.y5neko.ssrtools.utils.DocUtils;
 import com.y5neko.ssrtools.utils.FileUtils;
+import com.y5neko.ssrtools.utils.LogUtils;
+import com.y5neko.ssrtools.utils.MiscUtils;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -34,6 +36,9 @@ import java.time.LocalDate;
 import static com.y5neko.ssrtools.config.GlobalConfig.COMPANY_TEMPLATE_DIR;
 import static com.y5neko.ssrtools.config.GlobalConfig.VULN_TREE_PATH;
 
+/**
+ * 主窗口
+ */
 public class MainWindow {
     // 主界面组件相关成员变量
     private final ScrollPane scrollPane;
@@ -65,6 +70,9 @@ public class MainWindow {
     // 漏洞库编辑按钮
     private VulnEditorWindow vuLnEditorWindow;
 
+    /**
+     * 构造函数
+     */
     public MainWindow() {
         grid = new GridPane();
         grid.setPadding(new Insets(20));
@@ -262,7 +270,7 @@ public class MainWindow {
             String docContent = DocUtils.contentGen(docObj);
 
             // ===================================生成漏洞相关========================================
-            JSONArray unitsArray = JSON.parseArray(FileUtils.readFile(VULN_TREE_PATH));
+            JSONArray unitsArray = JSON.parseArray(FileUtils.readFile(MiscUtils.getAbsolutePath(VULN_TREE_PATH)));
             ReportData reportData = new ReportData();
 
             // 遍历单位
@@ -339,9 +347,8 @@ public class MainWindow {
 
                                     system.getVulnerabilities().add(vuln);
                                 } catch (FileNotFoundException ex) {
-                                    System.out.println(ex.getMessage());
+                                    LogUtils.error(MainWindow.class, "加载漏洞库失败" + ex.getMessage());
                                 }
-
                             }
                         }
                     }
@@ -369,7 +376,7 @@ public class MainWindow {
                     }
                 });
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                LogUtils.error(MainWindow.class, "生成报告失败" + ex.getMessage());
             }
         });
 
@@ -405,6 +412,7 @@ public class MainWindow {
         try {
             return Integer.parseInt(text.trim());
         } catch (Exception e) {
+//            LogUtils.error(MainWindow.class, "解析整数失败" + text);
             return 0;
         }
     }
@@ -539,7 +547,7 @@ public class MainWindow {
             confirm.setContentText("确认删除模板：" + selected + " ?");
             confirm.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    File file = new File(COMPANY_TEMPLATE_DIR, selected + ".json");
+                    File file = new File(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR), selected + ".json");
                     if (file.exists() && file.delete()) {
                         showAlert("成功", "模板已删除！");
                         loadTemplateList();
@@ -563,7 +571,7 @@ public class MainWindow {
      * 加载模板列表
      */
     private void loadTemplateList() {
-        File dir = new File(COMPANY_TEMPLATE_DIR);
+        File dir = new File(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR));
         if (!dir.exists()) {
             dir.mkdirs();
         }
@@ -586,10 +594,10 @@ public class MainWindow {
             JSONObject currentData = getCurrentData();
             String json = JSON.toJSONString(currentData, JSONWriter.Feature.PrettyFormat);
             System.out.println(json);
-            Files.write(Paths.get(COMPANY_TEMPLATE_DIR, name + ".json"), json.getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR), name + ".json"), json.getBytes(StandardCharsets.UTF_8));
             showAlert("成功", "模板已保存！");
         } catch (IOException ex) {
-            System.out.println(ex.getMessage());
+            LogUtils.error(MainWindow.class, "保存模板失败" + ex.getMessage());
             showAlert("错误", "保存模板失败: " + ex.getMessage());
         }
     }
@@ -600,11 +608,11 @@ public class MainWindow {
      */
     private void loadTemplate(String name) {
         try {
-            String json = new String(Files.readAllBytes(Paths.get(COMPANY_TEMPLATE_DIR, name + ".json")), StandardCharsets.UTF_8);
+            String json = new String(Files.readAllBytes(Paths.get(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR), name + ".json")), StandardCharsets.UTF_8);
             Object data = JSON.parseObject(json, Object.class);
             setCurrentData(data); // 将数据填充到界面
         } catch (IOException ex) {
-            System.out.println("加载模板失败: " + ex.getMessage());
+            LogUtils.error(MainWindow.class, "加载模板失败" + ex.getMessage());
         }
     }
 
@@ -714,10 +722,11 @@ public class MainWindow {
             }
         } catch (Exception e) {
             // 任意异常，退回打开文件夹
+            LogUtils.error(MainWindow.class, "打开文件所在文件夹失败" + e.getMessage());
             try {
                 Desktop.getDesktop().open(file.getParentFile());
             } catch (IOException ex) {
-                System.out.println("打开文件夹失败: " + ex.getMessage());
+                LogUtils.error(MainWindow.class, "打开文件夹失败" + ex.getMessage());
                 showAlert("错误", "无法打开文件夹：" + ex.getMessage());
             }
         }

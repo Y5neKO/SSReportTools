@@ -4,6 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import com.y5neko.ssrtools.models.vulntree.SystemEntry;
 import com.y5neko.ssrtools.models.vulntree.UnitEntry;
 import com.y5neko.ssrtools.models.vulntree.Vuln;
+import com.y5neko.ssrtools.utils.LogUtils;
+import com.y5neko.ssrtools.utils.MiscUtils;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -20,10 +22,13 @@ import java.util.*;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.VULN_TREE_PATH;
 
+/**
+ * 漏洞录入窗口
+ */
 public class VulnTreeInputWindow {
 
     private final List<UnitEntry> unitEntries = new ArrayList<>();
-    private final File saveFile = new File(VULN_TREE_PATH);
+    private final File saveFile = new File(MiscUtils.getAbsolutePath(VULN_TREE_PATH));
     private final VBox root = new VBox(10);
 
     /**
@@ -315,7 +320,7 @@ public class VulnTreeInputWindow {
             String json = JSON.toJSONString(unitEntries);
             out.write(json.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            LogUtils.error(VulnTreeInputWindow.class, "保存文件失败：" + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "保存失败", e.getMessage());
         }
     }
@@ -362,7 +367,7 @@ public class VulnTreeInputWindow {
                 container.getChildren().add(unitBox);
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            LogUtils.error(VulnTreeInputWindow.class, "加载文件失败：" + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "加载失败", e.getMessage());
         }
     }
