@@ -56,39 +56,58 @@ public class VulnTreeInputWindow {
         Stage stage = new Stage();
         stage.setTitle("漏洞录入");
 
+        // 美化整体样式
+        root.setStyle("-fx-background-color: #f5f6fa;");
+        root.setPadding(new Insets(20));
+
         ScrollPane scrollPane = new ScrollPane();
-        VBox container = new VBox(12);
-        scrollPane.setContent(container);
         scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-border-color: #e9ecef;");
+
+        VBox container = new VBox(15);
+        container.setPadding(new Insets(10));
+        scrollPane.setContent(container);
+
+        // 美化按钮样式
+        String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
+        String dangerBtnStyle = "-fx-background-color: #f53e57; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
+        String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
 
         Button addUnitBtn = new Button("+ 添加单位");
-        addUnitBtn.setStyle("-fx-background-color: #007acc; -fx-text-fill: white;");
+        addUnitBtn.setStyle(primaryBtnStyle);
         addUnitBtn.setOnAction(e -> {
             VBox unitBox = createUnitBlock(container);
             container.getChildren().add(unitBox);
         });
 
         Button clearBtn = new Button("清空");
-        clearBtn.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white;"); // 红色按钮
+        clearBtn.setStyle(dangerBtnStyle);
         clearBtn.setOnAction(e -> {
-            // 清空UI中的所有单位块
             container.getChildren().clear();
-            // 清空内存中的数据
             unitEntries.clear();
         });
 
         Button saveBtn = new Button("保存");
-        saveBtn.setStyle("-fx-background-color: #28a745; -fx-text-fill: white;");
+        saveBtn.setStyle(successBtnStyle);
         saveBtn.setOnAction(e -> {
             if (collectDataFromUI(container)) {
+                // 调试：检查修复建议字段的换行符
+                if (!unitEntries.isEmpty() && !unitEntries.get(0).systems.isEmpty() && !unitEntries.get(0).systems.get(0).vulns.isEmpty()) {
+                    String fixText = unitEntries.get(0).systems.get(0).vulns.get(0).fix;
+                    int lineCount = fixText.split("\n").length;
+                    LogUtils.info(VulnTreeInputWindow.class, "保存的修复建议内容（行数：" + lineCount + "）：" + fixText.replace("\n", "[换行]"));
+                }
+
                 saveData();
                 showAlert(Alert.AlertType.INFORMATION, "保存成功", "数据已成功保存");
             }
         });
 
-        root.setPadding(new Insets(15));
-        // 顺序：添加单位，清空，保存按钮
-        HBox btnBox = new HBox(10, addUnitBtn, clearBtn, saveBtn);
+        // 按钮容器样式
+        HBox btnBox = new HBox(12, addUnitBtn, clearBtn, saveBtn);
+        btnBox.setAlignment(Pos.CENTER);
+        btnBox.setPadding(new Insets(0, 0, 20, 0));
+
         root.getChildren().addAll(btnBox, scrollPane);
 
         loadDataToUI(container);
@@ -106,24 +125,32 @@ public class VulnTreeInputWindow {
      * @return 单位块
      */
     private VBox createUnitBlock(VBox container) {
-        VBox unitBox = new VBox(8);
-        unitBox.setStyle("-fx-border-color: #999999; -fx-padding: 10; -fx-background-color: #f0f8ff;"); // 浅蓝背景
+        VBox unitBox = new VBox(10);
+        unitBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 5, 0, 0, 2);");
 
-        HBox titleBox = new HBox(10);
-        Label unitLabel = new Label("单位");
-        unitLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+        HBox titleBox = new HBox(12);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label unitLabel = new Label("【单位】");
+        unitLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2d3436;");
+
         TextField unitName = new TextField();
-        unitName.setPromptText("单位名称");
-        unitName.setTooltip(new Tooltip("必填"));
-        Button delUnitBtn = new Button("删除");
-        delUnitBtn.setStyle("-fx-background-color: #ff6666; -fx-text-fill: white;");
-        delUnitBtn.setOnAction(e -> container.getChildren().remove(unitBox));
+        unitName.setPromptText("单位名称（必填）");
+        unitName.setStyle("-fx-font-size: 14px; -fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px;");
+        unitName.setTooltip(new Tooltip("请输入单位名称"));
+
+        Button delUnitBtn = new Button("×");
+        delUnitBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 12px;");
+        delUnitBtn.setOnAction(e -> {
+            container.getChildren().remove(unitBox);
+        });
+
         HBox.setHgrow(unitName, Priority.ALWAYS);
         titleBox.getChildren().addAll(unitLabel, unitName, delUnitBtn);
 
-        VBox systemsBox = new VBox(8);
+        VBox systemsBox = new VBox(10);
         Button addSystemBtn = new Button("+ 添加系统");
-        addSystemBtn.setStyle("-fx-background-color: #3399ff; -fx-text-fill: white;");
+        addSystemBtn.setStyle("-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 8px 16px;");
         addSystemBtn.setOnAction(e -> {
             VBox systemBox = createSystemBlock(systemsBox);
             systemsBox.getChildren().add(systemBox);
@@ -140,23 +167,29 @@ public class VulnTreeInputWindow {
      */
     private VBox createSystemBlock(VBox systemsBox) {
         VBox systemBox = new VBox(8);
-        systemBox.setStyle("-fx-border-color: #66a3ff; -fx-padding: 10; -fx-background-color: #e6f0ff;"); // 更浅蓝
+        systemBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 6px; -fx-background-color: white; -fx-padding: 12px; -fx-background-radius: 6px;");
 
         HBox titleBox = new HBox(10);
-        Label systemLabel = new Label("系统");
-        systemLabel.setStyle("-fx-font-weight: bold;");
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label systemLabel = new Label("【系统】");
+        systemLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #2d3436;");
+
         TextField systemName = new TextField();
-        systemName.setPromptText("系统名称");
-        systemName.setTooltip(new Tooltip("必填"));
-        Button delSystemBtn = new Button("删除");
-        delSystemBtn.setStyle("-fx-background-color: #ff6666; -fx-text-fill: white;");
+        systemName.setPromptText("系统名称（必填）");
+        systemName.setStyle("-fx-font-size: 13px; -fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 6px;");
+        systemName.setTooltip(new Tooltip("请输入系统名称"));
+
+        Button delSystemBtn = new Button("×");
+        delSystemBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 4px 10px; -fx-font-size: 12px;");
         delSystemBtn.setOnAction(e -> systemsBox.getChildren().remove(systemBox));
+
         HBox.setHgrow(systemName, Priority.ALWAYS);
         titleBox.getChildren().addAll(systemLabel, systemName, delSystemBtn);
 
         VBox vulnsBox = new VBox(8);
         Button addVulnBtn = new Button("+ 添加漏洞");
-        addVulnBtn.setStyle("-fx-background-color: #3399ff; -fx-text-fill: white;");
+        addVulnBtn.setStyle("-fx-background-color: #a29bfe; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 14px; -fx-font-size: 13px;");
         addVulnBtn.setOnAction(e -> {
             HBox vulnRow = createVulnRow(vulnsBox);
             vulnsBox.getChildren().add(vulnRow);
@@ -183,6 +216,8 @@ public class VulnTreeInputWindow {
      */
     private HBox createVulnRow(VBox vulnsBox, boolean[] isLoadingRef) {
         HBox vulnRow = new HBox(8);
+        vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px;");
+        vulnRow.setAlignment(Pos.CENTER); // 居中对齐，适应不同高度的组件
 
         // 漏洞名称输入框（支持自动完成）
         TextField name = new TextField();
@@ -199,17 +234,77 @@ public class VulnTreeInputWindow {
         TextField harm = new TextField();
         harm.setPromptText("危害");
 
-        TextField fix = new TextField();
+        // 修复建议字段 - 固定高度多行文本框，带滚动条
+        TextArea fix = new TextArea();
         fix.setPromptText("修复建议");
+        fix.setPrefHeight(60); // 固定高度，约等于3行文本
+        fix.setMaxHeight(60); // 禁止自动调整高度
+        fix.setMinHeight(60); // 强制固定高度
+        fix.setWrapText(true); // 自动换行
+        fix.setStyle("-fx-font-size: 12px; -fx-background-color: #fafbfc; -fx-border-color: #e9ecef; -fx-border-radius: 3px; -fx-padding: 4px; -fx-wrap-text: true; -fx-pref-width: 150px; -fx-max-width: 300px;");
+
+        // 禁用自动高度调整，保持固定高度
+        fix.setScrollTop(0); // 初始滚动到顶部
+
+        // 添加内容变化监听，确保滚动条在需要时出现
+        fix.textProperty().addListener((observable, oldValue, newValue) -> {
+            // 当内容变化时，如果有很多行，自动滚动到底部（可选功能）
+            if (newValue != null && newValue.split("\n").length > 3) {
+                javafx.application.Platform.runLater(() -> {
+                    fix.setScrollTop(Double.MAX_VALUE); // 滚动到底部
+                });
+            }
+        });
+
+        // 简单的tooltip显示完整内容
+        fix.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) { // 失去焦点时
+                String text = fix.getText();
+                if (!text.trim().isEmpty() && text.length() > 50) {
+                    fix.setTooltip(new Tooltip("完整内容：\n" + text));
+                } else {
+                    fix.setTooltip(null);
+                }
+            }
+        });
+
+        // 支持Ctrl+Home/Ctrl+End键快速导航
+        fix.setOnKeyPressed(e -> {
+            if (e.isControlDown()) {
+                if (e.getCode() == KeyCode.HOME) {
+                    fix.setScrollTop(0);
+                    e.consume();
+                } else if (e.getCode() == KeyCode.END) {
+                    fix.setScrollTop(Double.MAX_VALUE);
+                    e.consume();
+                }
+            }
+        });
 
         TextField repaired = new TextField();
-        repaired.setPromptText("是否修复(是/否)");
+        repaired.setPromptText("是否修复");
 
-        // 自适应
-        for (TextField tf : Arrays.asList(name, desc, level, harm, fix)) {
-            HBox.setHgrow(tf, Priority.ALWAYS);
-            tf.setMinWidth(50);
-        }
+        // 统一样式设置
+        String fieldStyle = "-fx-font-size: 12px; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 3px; -fx-padding: 5px;";
+
+        // 应用统一样式
+        name.setStyle(fieldStyle);
+        desc.setStyle(fieldStyle);
+        level.setStyle(fieldStyle);
+        harm.setStyle(fieldStyle);
+        repaired.setStyle(fieldStyle);
+
+        // 设置字段最小宽度
+        name.setMinWidth(80);
+        desc.setMinWidth(80);
+        level.setMinWidth(80);
+        harm.setMinWidth(80);
+        repaired.setMinWidth(60);
+        repaired.setMaxWidth(70);
+
+        // 设置修复建议的固定宽度，避免影响其他字段
+        fix.setPrefWidth(150);
+        fix.setMaxWidth(300); // 最大宽度限制
 
         // 如果提供了加载状态标记，使用它；否则创建新的
         final boolean[] isLoading = isLoadingRef != null ? isLoadingRef : new boolean[]{false};
@@ -282,11 +377,25 @@ public class VulnTreeInputWindow {
             }
         });
 
-        Button delVulnBtn = new Button("删除");
-        delVulnBtn.setStyle("-fx-background-color: #ff6666; -fx-text-fill: white;");
+        Button delVulnBtn = new Button("×");
+        delVulnBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 50%; -fx-padding: 4px 6px; -fx-font-size: 11px; -fx-pref-width: 20px; -fx-pref-height: 20px; -fx-min-width: 20px; -fx-min-height: 20px;");
         delVulnBtn.setOnAction(e -> vulnsBox.getChildren().remove(vulnRow));
 
         vulnRow.getChildren().addAll(name, desc, level, harm, fix, repaired, delVulnBtn);
+
+        // 设置布局权重，确保X按钮有足够空间
+        HBox.setHgrow(name, Priority.ALWAYS);
+        HBox.setHgrow(desc, Priority.ALWAYS);
+        HBox.setHgrow(level, Priority.ALWAYS);
+        HBox.setHgrow(harm, Priority.ALWAYS);
+        HBox.setHgrow(fix, Priority.ALWAYS);
+        HBox.setHgrow(repaired, Priority.NEVER);
+        HBox.setHgrow(delVulnBtn, Priority.NEVER);
+
+        // 设置最小宽度
+        fix.setMinWidth(100);
+        delVulnBtn.setMaxWidth(25);
+
         return vulnRow;
     }
 
@@ -364,30 +473,38 @@ public class VulnTreeInputWindow {
                     if (!(vNode instanceof HBox)) continue;
                     HBox vulnRow = (HBox) vNode;
 
-                    List<TextField> fields = new ArrayList<>();
-                    for (Node n : vulnRow.getChildren()) {
-                        if (n instanceof TextField) {
-                            fields.add((TextField) n);
+                    // 直接提取所有字段内容，包括TextArea
+                    String vulnName = null, vulnDesc = null, vulnLevel = null, vulnHarm = null, vulnFix = null, vulnRepaired = null;
+
+                    for (int i = 0; i < vulnRow.getChildren().size(); i++) {
+                        Node n = vulnRow.getChildren().get(i);
+                        if (i == 0 && n instanceof TextField) {
+                            vulnName = ((TextField) n).getText().trim();
+                        } else if (i == 1 && n instanceof TextField) {
+                            vulnDesc = ((TextField) n).getText();
+                        } else if (i == 2 && n instanceof TextField) {
+                            vulnLevel = ((TextField) n).getText();
+                        } else if (i == 3 && n instanceof TextField) {
+                            vulnHarm = ((TextField) n).getText();
+                        } else if (i == 4 && n instanceof TextArea) {
+                            vulnFix = ((TextArea) n).getText(); // 直接获取TextArea内容，保持换行符
+                        } else if (i == 5 && n instanceof TextField) {
+                            vulnRepaired = ((TextField) n).getText();
                         }
                     }
 
-                    if (fields.isEmpty()) continue;
-
-                    String vulnName = fields.get(0).getText().trim();
-                    if (vulnName.isEmpty()) {
-                        fields.get(0).setStyle(errorStyle);
+                    if (vulnName == null || vulnName.isEmpty()) {
                         showAlert(Alert.AlertType.ERROR, "校验错误", "漏洞名称不能为空");
                         return false;
                     }
 
                     Vuln vuln = new Vuln();
                     vuln.name = vulnName;
-                    vuln.desc = fields.size() > 1 ? fields.get(1).getText() : "";
-                    vuln.level = fields.size() > 2 ? fields.get(2).getText() : "";
-                    vuln.harm = fields.size() > 3 ? fields.get(3).getText() : "";
-                    vuln.fix = fields.size() > 4 ? fields.get(4).getText() : "";
-                    // 修复状态
-                    vuln.repaired = fields.size() > 5 ? fields.get(5).getText() : "";
+                    vuln.desc = vulnDesc != null ? vulnDesc : "";
+                    vuln.level = vulnLevel != null ? vulnLevel : "";
+                    vuln.harm = vulnHarm != null ? vulnHarm : "";
+                    vuln.fix = vulnFix != null ? vulnFix : ""; // TextArea内容，包含换行符
+                    vuln.repaired = vulnRepaired != null ? vulnRepaired : "";
 
                     system.vulns.add(vuln);
                 }
@@ -463,7 +580,11 @@ public class VulnTreeInputWindow {
                         ((TextField) vulnRow.getChildren().get(1)).setText(vuln.desc);
                         ((TextField) vulnRow.getChildren().get(2)).setText(vuln.level);
                         ((TextField) vulnRow.getChildren().get(3)).setText(vuln.harm);
-                        ((TextField) vulnRow.getChildren().get(4)).setText(vuln.fix);
+
+                        // 处理修复建议的TextArea，确保换行符正确加载
+                        TextArea fixField = (TextArea) vulnRow.getChildren().get(4);
+                        fixField.setText(vuln.fix); // 直接设置完整内容，包含换行符
+
                         ((TextField) vulnRow.getChildren().get(5)).setText(vuln.repaired);
 
                         vulnsBox.getChildren().add(vulnRow);
