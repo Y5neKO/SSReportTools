@@ -4,21 +4,29 @@ import com.alibaba.fastjson2.JSON;
 import com.y5neko.ssrtools.models.vulntree.SystemEntry;
 import com.y5neko.ssrtools.models.vulntree.UnitEntry;
 import com.y5neko.ssrtools.models.vulntree.Vuln;
+import com.y5neko.ssrtools.services.VulnerabilityService;
 import com.y5neko.ssrtools.utils.LogUtils;
 import com.y5neko.ssrtools.utils.MiscUtils;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import java.util.function.Consumer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.VULN_TREE_PATH;
 
@@ -30,11 +38,21 @@ public class VulnTreeInputWindow {
     private final List<UnitEntry> unitEntries = new ArrayList<>();
     private final File saveFile = new File(MiscUtils.getAbsolutePath(VULN_TREE_PATH));
     private final VBox root = new VBox(10);
+    private VulnerabilityService vulnerabilityService;
 
     /**
      * 显示漏洞录入窗口
      */
     public void show() {
+        // 初始化漏洞服务
+        try {
+            vulnerabilityService = new VulnerabilityService();
+        } catch (FileNotFoundException e) {
+            LogUtils.error(VulnTreeInputWindow.class, "漏洞库文件未找到：" + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "初始化错误", "漏洞库文件未找到，请检查配置");
+            return;
+        }
+
         Stage stage = new Stage();
         stage.setTitle("漏洞录入");
 
@@ -154,12 +172,24 @@ public class VulnTreeInputWindow {
      * @return 漏洞行
      */
     private HBox createVulnRow(VBox vulnsBox) {
+        return createVulnRow(vulnsBox, null);
+    }
+
+    /**
+     * 创建漏洞行（重载版本，支持加载状态标记）
+     * @param vulnsBox 漏洞容器
+     * @param isLoadingRef 加载状态标记数组
+     * @return 漏洞行
+     */
+    private HBox createVulnRow(VBox vulnsBox, boolean[] isLoadingRef) {
         HBox vulnRow = new HBox(8);
 
+        // 漏洞名称输入框（支持自动完成）
         TextField name = new TextField();
         name.setPromptText("漏洞名称");
-        name.setTooltip(new Tooltip("必填"));
+        name.setTooltip(new Tooltip("必填，输入可匹配漏洞库"));
 
+        // 其他字段
         TextField desc = new TextField();
         desc.setPromptText("描述");
 
@@ -180,6 +210,77 @@ public class VulnTreeInputWindow {
             HBox.setHgrow(tf, Priority.ALWAYS);
             tf.setMinWidth(50);
         }
+
+        // 如果提供了加载状态标记，使用它；否则创建新的
+        final boolean[] isLoading = isLoadingRef != null ? isLoadingRef : new boolean[]{false};
+
+        // 创建自定义工具提示作为建议列表
+        CustomTooltip suggestionTooltip = new CustomTooltip();
+
+        // 自动完成功能实现
+        name.textProperty().addListener((observable, oldValue, newValue) -> {
+            // 如果正在加载数据，不触发自动完成
+            if (isLoading[0]) {
+                return;
+            }
+            if (newValue == null || newValue.trim().isEmpty()) {
+                suggestionTooltip.hide();
+                return;
+            }
+
+            // 从漏洞库中匹配漏洞名称
+            List<String> matchedVulns = vulnerabilityService.getVulnerabilityMap().keySet().stream()
+                    .filter(vulnName -> vulnName.toLowerCase().contains(newValue.toLowerCase().trim()))
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            if (matchedVulns.isEmpty()) {
+                suggestionTooltip.hide();
+                return;
+            }
+
+            // 如果只有一个精确匹配，自动填充
+            if (matchedVulns.size() == 1 &&
+                matchedVulns.get(0).equalsIgnoreCase(newValue.trim())) {
+                VulnerabilityService.Vulnerability vuln = vulnerabilityService.getVulnerability(matchedVulns.get(0));
+                if (vuln != null) {
+                    desc.setText(vuln.getDescription());
+                    level.setText(vuln.getRiskLevel());
+                    harm.setText(vuln.getHarm());
+                    fix.setText(vuln.getSuggustion());
+                }
+                suggestionTooltip.hide();
+                return;
+            }
+
+            // 显示建议列表
+            suggestionTooltip.showSuggestions(matchedVulns, name, vuln -> {
+                VulnerabilityService.Vulnerability vulnData = vulnerabilityService.getVulnerability(vuln);
+                if (vulnData != null) {
+                    name.setText(vuln);
+                    desc.setText(vulnData.getDescription());
+                    level.setText(vulnData.getRiskLevel());
+                    harm.setText(vulnData.getHarm());
+                    fix.setText(vulnData.getSuggustion());
+                }
+                suggestionTooltip.hide();
+            });
+        });
+
+        // 当输入框失去焦点时隐藏建议
+        name.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) {
+                suggestionTooltip.hide();
+            }
+        });
+
+        // 当用户按下回车键时选择第一个匹配项
+        name.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                suggestionTooltip.selectFirst();
+                e.consume();
+            }
+        });
 
         Button delVulnBtn = new Button("删除");
         delVulnBtn.setStyle("-fx-background-color: #ff6666; -fx-text-fill: white;");
@@ -331,6 +432,10 @@ public class VulnTreeInputWindow {
      */
     private void loadDataToUI(VBox container) {
         if (!saveFile.exists()) return;
+
+        // 创建加载状态标记
+        boolean[] isLoading = {true};
+
         try (FileInputStream in = new FileInputStream(saveFile);
              Scanner scanner = new Scanner(in, "UTF-8").useDelimiter("\\A"))
         {
@@ -351,9 +456,10 @@ public class VulnTreeInputWindow {
 
                     sysField.setText(sys.system);
                     for (Vuln vuln : sys.vulns) {
-                        HBox vulnRow = createVulnRow(vulnsBox);
+                        HBox vulnRow = createVulnRow(vulnsBox, isLoading);
 
                         ((TextField) vulnRow.getChildren().get(0)).setText(vuln.name);
+
                         ((TextField) vulnRow.getChildren().get(1)).setText(vuln.desc);
                         ((TextField) vulnRow.getChildren().get(2)).setText(vuln.level);
                         ((TextField) vulnRow.getChildren().get(3)).setText(vuln.harm);
@@ -370,6 +476,9 @@ public class VulnTreeInputWindow {
             LogUtils.error(VulnTreeInputWindow.class, "加载文件失败：" + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "加载失败", e.getMessage());
         }
+
+        // 加载完成，重置标记
+        isLoading[0] = false;
     }
 
     /**
@@ -396,6 +505,70 @@ public class VulnTreeInputWindow {
                 node.setStyle("");
             } else if (node instanceof Pane) {
                 clearErrorStyles((Pane) node); // 递归清除
+            }
+        }
+    }
+
+    /**
+     * 自定义工具提示类，用于显示建议列表
+     */
+    private static class CustomTooltip {
+        private Tooltip tooltip;
+        private ListView<String> listView;
+        private Consumer<String> onSelect;
+
+        public CustomTooltip() {
+            listView = new ListView<>();
+            listView.setPrefHeight(120);
+            listView.setPrefWidth(250);
+            listView.setCellFactory(param -> {
+                ListCell<String> cell = new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                        } else {
+                            setText(item);
+                        }
+                    }
+                };
+                cell.setOnMouseClicked(e -> {
+                    if (e.getClickCount() == 1 && !cell.isEmpty()) {
+                        if (onSelect != null) {
+                            onSelect.accept(cell.getItem());
+                        }
+                    }
+                });
+                return cell;
+            });
+
+            tooltip = new Tooltip();
+            tooltip.setGraphic(listView);
+            tooltip.setShowDelay(Duration.millis(100));
+            tooltip.setHideDelay(Duration.millis(0));
+            tooltip.setShowDuration(Duration.seconds(30));
+        }
+
+        public void showSuggestions(List<String> suggestions, TextField owner, Consumer<String> onSelect) {
+            this.onSelect = onSelect;
+            listView.getItems().clear();
+            listView.getItems().addAll(suggestions);
+
+            // 显示工具提示
+            Point2D location = owner.localToScreen(0, owner.getHeight());
+            if (location != null) {
+                tooltip.show(owner, location.getX(), location.getY());
+            }
+        }
+
+        public void hide() {
+            tooltip.hide();
+        }
+
+        public void selectFirst() {
+            if (!listView.getItems().isEmpty() && onSelect != null) {
+                onSelect.accept(listView.getItems().get(0));
             }
         }
     }
