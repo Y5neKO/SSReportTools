@@ -14,84 +14,60 @@ import java.util.List;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.*;
 
-/**
- * 文档生成工具类
- */
 public class DocUtils {
+
+    /**
+     * 统一安全替换（自动转义）
+     */
+    private static String safeReplace(String content, String pattern, String value) {
+        return content.replaceAll(pattern, XmlEscapeUtils.escape(value));
+    }
+
     /**
      * 专用于正文处理多行内容
-     * @param template 模板
-     * @param lineText 每行文本
-     * @return 处理后的行
      */
     private static String processNormalTextLine(String template, String lineText) {
         return template
-                .replaceAll("\\{\\{\\{\\{\\{normal_text}}}}}", lineText)
+                .replaceAll("\\{\\{\\{\\{\\{normal_text}}}}}", XmlEscapeUtils.escape(lineText))
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
                 .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
     }
 
-    /**
-     * 替换占位符生成一级标题的原始内容
-     * @param text 一级标题文本
-     * @return 一级标题的原始内容
-     */
     public static String firstHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FIRST_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{first_heading_text}}}}}",text)
+                .replaceAll("\\{\\{\\{\\{\\{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
                 .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
     }
 
-    /**
-     * 替换占位符生成二级标题的原始内容
-     * @param text 二级标题文本
-     * @return 二级标题的原始内容
-     */
     public static String secondHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(SECOND_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{second_heading_text}}}}}",text)
+                .replaceAll("\\{\\{\\{\\{\\{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
                 .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
     }
 
-    /**
-     * 替换占位符生成三级标题的原始内容
-     * @param text 三级标题文本
-     * @return 三级标题的原始内容
-     */
     public static String thirdHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(THIRD_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{third_heading_text}}}}}",text)
+                .replaceAll("\\{\\{\\{\\{\\{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
                 .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
     }
 
-    /**
-     * 替换占位符生成四级标题的原始内容
-     * @param text 四级标题文本
-     * @return 四级标题的原始内容
-     */
     public static String fourthHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FOURTH_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{fourth_heading_text}}}}}",text)
+                .replaceAll("\\{\\{\\{\\{\\{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
                 .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
                 .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
     }
 
-    /**
-     * 替换占位符生成正文的原始内容
-     * @param text 正文文本
-     * @return 正文文本的原始内容
-     */
     public static String normalTextGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(NORMAL_TEXT_TEPMLATE_PATH));
 
-        // 检测是否存在多行
         if (text.contains("\n")) {
             StringBuilder result = new StringBuilder();
             String[] lines = text.split("\n");
@@ -100,118 +76,92 @@ public class DocUtils {
                 if (i > 0) result.append("\n");
                 result.append(processNormalTextLine(contentTemplate, lines[i]));
             }
-
             return result.toString();
         } else {
             return processNormalTextLine(contentTemplate, text);
         }
     }
 
-    /**
-     * 替换占位符生成报告模板原始内容
-     * @param docObj 报告模板信息对象
-     * @return 报告模板原始内容
-     */
     public static String contentGen(DocObj docObj) {
-        String contentTemplates = FileUtils.readFile(MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) +"/word/document.xml");
+
+        String contentTemplates = FileUtils.readFile(
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/word/document.xml"
+        );
 
         return contentTemplates
-                .replaceAll("\\{\\{\\{\\{\\{customer_name}}}}}", docObj.getCustomerName())
-                .replaceAll("\\{\\{\\{\\{\\{is_firsr_test}}}}}", docObj.getIsFirsrTest())
-                .replaceAll("\\{\\{\\{\\{\\{signature_name}}}}}", docObj.getSignatureName())
-                .replaceAll("\\{\\{\\{\\{\\{report_year}}}}}", Integer.toString(docObj.getReportYear()))
-                .replaceAll("\\{\\{\\{\\{\\{report_month}}}}}", Integer.toString(docObj.getReportMonth()))
-                .replaceAll("\\{\\{\\{\\{\\{report_day}}}}}", Integer.toString(docObj.getReportDay()))
-                .replaceAll("\\{\\{\\{\\{\\{report_reporter}}}}}", docObj.getReporter())
-                .replaceAll("\\{\\{\\{\\{\\{test_time}}}}}", docObj.getTestTime())
-                .replaceAll("\\{\\{\\{\\{\\{vul_all_count}}}}}", Integer.toString(docObj.getVulAllCount()))
-                .replaceAll("\\{\\{\\{\\{\\{vul_high_count}}}}}", Integer.toString(docObj.getVulHighCount()))
-                .replaceAll("\\{\\{\\{\\{\\{vul_medium_count}}}}}", Integer.toString(docObj.getVulMediumCount()))
-                .replaceAll("\\{\\{\\{\\{\\{vul_low_count}}}}}", Integer.toString(docObj.getVulLowCount()))
-                .replaceAll("\\{\\{\\{\\{\\{pm_name}}}}}", docObj.getPmName())
-                .replaceAll("\\{\\{\\{\\{\\{tester_name}}}}}", docObj.getTesterName());
+                .replaceAll("\\{\\{\\{\\{\\{customer_name}}}}}", XmlEscapeUtils.escape(docObj.getCustomerName()))
+                .replaceAll("\\{\\{\\{\\{\\{is_firsr_test}}}}}", XmlEscapeUtils.escape(docObj.getIsFirsrTest()))
+                .replaceAll("\\{\\{\\{\\{\\{signature_name}}}}}", XmlEscapeUtils.escape(docObj.getSignatureName()))
+                .replaceAll("\\{\\{\\{\\{\\{report_year}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportYear())))
+                .replaceAll("\\{\\{\\{\\{\\{report_month}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportMonth())))
+                .replaceAll("\\{\\{\\{\\{\\{report_day}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportDay())))
+                .replaceAll("\\{\\{\\{\\{\\{report_reporter}}}}}", XmlEscapeUtils.escape(docObj.getReporter()))
+                .replaceAll("\\{\\{\\{\\{\\{test_time}}}}}", XmlEscapeUtils.escape(docObj.getTestTime()))
+                .replaceAll("\\{\\{\\{\\{\\{vul_all_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulAllCount())))
+                .replaceAll("\\{\\{\\{\\{\\{vul_high_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulHighCount())))
+                .replaceAll("\\{\\{\\{\\{\\{vul_medium_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulMediumCount())))
+                .replaceAll("\\{\\{\\{\\{\\{vul_low_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulLowCount())))
+                .replaceAll("\\{\\{\\{\\{\\{pm_name}}}}}", XmlEscapeUtils.escape(docObj.getPmName()))
+                .replaceAll("\\{\\{\\{\\{\\{tester_name}}}}}", XmlEscapeUtils.escape(docObj.getTesterName()));
     }
 
-    /**
-     * 替换占位符生成报告漏洞相关原始内容
-     * @param reportData 报告数据
-     * @param docObj 报告对象
-     * @return 报告漏洞相关原始内容
-     */
     public static String mainContentGen(ReportData reportData, DocObj docObj) {
         StringBuilder mainContent = new StringBuilder();
 
-        // 遍历单位
         for (Unit unit : reportData.getUnits()) {
-            mainContent.append(DocUtils.firstHeadingGen(unit.getUnitName()));
+            mainContent.append(firstHeadingGen(unit.getUnitName()));
 
-            // 遍历系统
             for (SystemInfo systemInfo : unit.getSystems()) {
-                mainContent.append(DocUtils.secondHeadingGen(systemInfo.getSystemName()));
+                mainContent.append(secondHeadingGen(systemInfo.getSystemName()));
 
-                // 遍历漏洞
                 for (Vulnerability vulnerability : systemInfo.getVulnerabilities()) {
-                    if (docObj.getIsFirsrTest().equals("初测")) {
-                        mainContent.append(DocUtils.thirdHeadingGen(
-                                "【" + vulnerability.getRiskLevel() + "】"
-                                        + vulnerability.getName()
-                        ));
-                    } else {
-                        mainContent.append(DocUtils.thirdHeadingGen(
-                                "【" + vulnerability.getRiskLevel() + "】" +
-                                        vulnerability.getName() +
-                                        "（" + vulnerability.getIsFixed() + "）"
-                        ));
-                    }
 
-                    // 漏洞描述
-                    mainContent.append(DocUtils.fourthHeadingGen("漏洞描述"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getVulDesc()));
-                    // 风险等级
-                    mainContent.append(DocUtils.fourthHeadingGen("风险等级"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getRiskLevel()));
-                    // 漏洞危害
-                    mainContent.append(DocUtils.fourthHeadingGen("漏洞危害"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getVulHazards()));
-                    // 漏洞链接地址
-                    mainContent.append(DocUtils.fourthHeadingGen("漏洞链接地址"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getVulLinks()));
-                    // 漏洞证明
-                    mainContent.append(DocUtils.fourthHeadingGen("漏洞证明"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getVulDetail()));
-                    // 修复建议
-                    mainContent.append(DocUtils.fourthHeadingGen("修复建议"));
-                    mainContent.append(DocUtils.normalTextGen(vulnerability.getVulFixSuggestion()));
+                    String title;
+                    if (docObj.getIsFirsrTest().equals("初测")) {
+                        title = "【" + vulnerability.getRiskLevel() + "】" + vulnerability.getName();
+                    } else {
+                        title = "【" + vulnerability.getRiskLevel() + "】" +
+                                vulnerability.getName() + "（" + vulnerability.getIsFixed() + "）";
+                    }
+                    mainContent.append(thirdHeadingGen(title));
+
+                    mainContent.append(fourthHeadingGen("漏洞描述"));
+                    mainContent.append(normalTextGen(vulnerability.getVulDesc()));
+
+                    mainContent.append(fourthHeadingGen("风险等级"));
+                    mainContent.append(normalTextGen(vulnerability.getRiskLevel()));
+
+                    mainContent.append(fourthHeadingGen("漏洞危害"));
+                    mainContent.append(normalTextGen(vulnerability.getVulHazards()));
+
+                    mainContent.append(fourthHeadingGen("漏洞链接地址"));
+                    mainContent.append(normalTextGen(vulnerability.getVulLinks()));
+
+                    mainContent.append(fourthHeadingGen("漏洞证明"));
+                    mainContent.append(normalTextGen(vulnerability.getVulDetail()));
+
+                    mainContent.append(fourthHeadingGen("修复建议"));
+                    mainContent.append(normalTextGen(vulnerability.getVulFixSuggestion()));
                 }
             }
         }
         return mainContent.toString();
     }
 
-    /**
-     * 生成最终文档
-     * @param docTemplatesPath 文档模板路径
-     * @param docContent 文档主要内容
-     * @throws IOException IOE
-     * @param docObj 文档对象
-     * @return 文档路径
-     */
     public static String docGen(String docTemplatesPath, String docContent, DocObj docObj) throws IOException {
-        String path = MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH);
-        if (docTemplatesPath != null) {
-            path = docTemplatesPath;
-        }
 
-        // 清空缓存目录
+        String path = docTemplatesPath != null ? docTemplatesPath :
+                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH);
+
         FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
-
-        // 复制到缓存目录
         FileUtils.copyFolder(path, MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc");
 
-        // 替换document.xml
-        FileUtils.overwrite(MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word/document.xml", docContent, StandardCharsets.UTF_8);
+        FileUtils.overwrite(
+                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word/document.xml",
+                docContent,
+                StandardCharsets.UTF_8
+        );
 
-        // 生成文档
         List<String> sources = Arrays.asList(
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/_rels",
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/customXml",
@@ -230,8 +180,6 @@ public class DocUtils {
                 ".docx";
 
         ZipUtils.zipMultiple(sources, reportPath);
-
-        // 再次清空
         FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
 
         return reportPath;
