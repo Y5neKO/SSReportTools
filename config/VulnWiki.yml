@@ -451,11 +451,11 @@ vulnerabilities:
       5、对日志、请求头等高风险输入进行严格过滤或转义，避免触发动态解析行为。
   - name: 通达OA 管理员session泄漏
     harm: 攻击者无需合法凭证即可伪造管理员身份登陆通达OA，从而拥有系统最高权限，可能进行敏感操作、查看或篡改数据、上传恶意文件等，给组织的办公系统安全带来严重威胁。
-    description: 在通达OA（影响版本为 OA 2017 和 V11.x，小于 11.5）中，存在认证绕过漏洞，攻击者可以通过访问 /general/login_code.php
+    description: 在通达OA（影响版本为 OA 2017 和 V11.x，小于11.5）中，存在认证绕过漏洞，攻击者可以通过访问 /general/login_code.php
       获取 code_uid，再 POST 可控的 uid（如管理员 UID＝1）到 /logincheck_code.php，返回一个合法的 PHPSESSID（session），然后把这个
       session ID 注入自己的请求中，就能以管理员身份登录系统。
     risklevel: 高危
-    suggustion: "1、尽快将通达OA 升级至官方修复该漏洞的版本（≥ 11.5.200417） \n2、对登录逻辑引入更严格的校验机制，例如对 uid\
+    suggustion: "1、尽快将通达OA 升级至官方修复该漏洞的版本（≥11.5.200417） \n2、对登录逻辑引入更严格的校验机制，例如对 uid\
     \ 参数做白名单控制或验证来源，防止外部伪造\n3、对 session 的生成和绑定机制做加强，比如在生成 session 之前验证身份状态，避免直接用可控\
     参数映射用户\n4、开启和加强 Web 应用防火墙（WAF）、入侵检测系统（IDS/IPS），监控 /general/login_code.php 和 /logincheck_code.php\
     \ 的异常访问行为\n5、强化日志审计，对用户登录和 session 使用情况进行详细记录，并定期检查是否存在异常 session 借用或伪造情况。"
@@ -464,7 +464,7 @@ vulnerabilities:
     description: 帆软 BI（FineReport / FineBI）在其 channel 接口（通常是 /webroot/decision/remote/design/channel）中，存在反序列化漏洞，攻击者可以向该接口发送恶意序列化数据，在服务器端被反序列化后配合内部已有的
       CB（Commons‑Beanutils）gadget 链触发任意代码执行。
     risklevel: 高危
-    suggustion: "1、升级到帆软官方建议的安全版本：JAR 包时间在 2022‑08‑12 之后的 FineReport 10/11 和 FineBI\
+    suggustion: "1、升级到帆软官方建议的安全版本：JAR 包时间在2022‑08‑12 之后的 FineReport 10/11 和 FineBI\
     \ 系列版本。 \n2、在 Web 服务器层面限制对 /webroot/decision/remote/design/channel 接口的访问，只允许可信\
     \ IP 调用该路径。 \n3、关闭或删除不必要的序列化支持库、减少反序列化入口，并禁用内部反序列化 gadget（如 Beanutils 链）或使用更安全\
     的反序列化方式。\n4、部署 Web 应用防火墙（WAF）或入侵检测系统（IDS/IPS），针对序列化特征 payload（如 GZIP + Java 序列\
