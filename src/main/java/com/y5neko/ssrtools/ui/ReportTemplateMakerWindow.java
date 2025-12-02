@@ -16,6 +16,8 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.util.Optional;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.TEMPLATE_MAKER_CACHE_DIR;
+import static com.y5neko.ssrtools.config.GlobalConfig.REPORT_TEMPLATE_DIR;
 
 /**
  * 报告模板制作窗口
@@ -50,6 +53,7 @@ public class ReportTemplateMakerWindow {
     private String templateDirPath;
     private String templateName;
     private boolean isProcessed = false;
+    private String lastGeneratedDocxPath; // 最后生成的docx文件路径
 
     // 按钮样式
     private String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 3, 0, 0, 1);";
@@ -144,7 +148,7 @@ public class ReportTemplateMakerWindow {
         fixButton.setOnMouseExited(e -> fixButton.setStyle(warningBtnStyle));
         fixButton.setDisable(true);
 
-        exportButton = new Button("💾 导出模板");
+        exportButton = new Button("💾 保存模板");
         exportButton.setStyle(successBtnStyle);
         exportButton.setOnMouseEntered(e -> exportButton.setStyle(successBtnHover));
         exportButton.setOnMouseExited(e -> exportButton.setStyle(successBtnStyle));
@@ -218,7 +222,7 @@ public class ReportTemplateMakerWindow {
     private void setupEventHandlers() {
         uploadButton.setOnAction(e -> uploadFile());
         fixButton.setOnAction(e -> fixPlaceholders());
-        exportButton.setOnAction(e -> exportTemplate());
+        exportButton.setOnAction(e -> saveTemplate());
     }
 
     /**
@@ -343,6 +347,35 @@ public class ReportTemplateMakerWindow {
     }
 
     /**
+     * 打开文件
+     */
+    private void openFile(String filePath) {
+        try {
+            // macOS系统命令打开文件
+            String os = System.getProperty("os.name").toLowerCase();
+            ProcessBuilder processBuilder;
+
+            if (os.contains("mac")) {
+                processBuilder = new ProcessBuilder("open", filePath);
+            } else if (os.contains("windows")) {
+                processBuilder = new ProcessBuilder("cmd", "/c", "start", "\"\"", filePath, "\"\"");
+            } else if (os.contains("linux")) {
+                processBuilder = new ProcessBuilder("xdg-open", filePath);
+            } else {
+                // 默认使用Desktop类
+                java.awt.Desktop.getDesktop().open(new File(filePath));
+                return;
+            }
+
+            processBuilder.start();
+
+        } catch (Exception e) {
+            LogUtils.error(ReportTemplateMakerWindow.class, "打开文件失败", e);
+            showAlert("错误", "无法打开文件：" + e.getMessage());
+        }
+    }
+
+    /**
      * 修复占位符
      */
     private void fixPlaceholders() {
@@ -377,14 +410,34 @@ public class ReportTemplateMakerWindow {
                     // 写入修复后的内容
                     FileUtils.overwrite(documentXmlPath, fixedContent, StandardCharsets.UTF_8);
 
+                    // 生成测试docx文件
+                    String testDocxPath = generateTestDocx();
+
                     Platform.runLater(() -> {
-                        updateStatus("占位符修复完成！可以导出模板", 1.0);
+                        updateStatus("占位符修复完成！已生成测试文件", 1.0);
                         appendLog("占位符修复成功");
                         appendLog("修复统计：");
                         appendLog("- 原始完整占位符: " + WordPlaceholderTest.getOriginalPlaceholderCount());
                         appendLog("- 修复后完整占位符: " + WordPlaceholderTest.getFixedPlaceholderCount());
+                        appendLog("已生成测试文件: " + testDocxPath);
 
-                        // 启用导出按钮
+                        // 弹出提示窗口
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("修复完成");
+                        alert.setHeaderText("占位符修复成功！");
+                        alert.setContentText("已自动生成测试文档供您查看格式。\n\n请检查格式是否有混乱，如存在混乱可能需要手动调整占位符。\n{{{{{MainContent}}}}}占位符消失是正常现象，可以忽略。\n\n点击确定后将自动打开测试文档。");
+
+                        ButtonType result = alert.showAndWait().orElse(ButtonType.OK);
+
+                        // 用户点击确定后自动打开文件
+                        if (result == ButtonType.OK) {
+                            openFile(testDocxPath);
+                        }
+
+                        // 保存最后生成的docx路径
+                        lastGeneratedDocxPath = testDocxPath;
+
+                        // 启用保存按钮
                         exportButton.setDisable(false);
                         fixButton.setDisable(true);
                         isProcessed = true;
@@ -409,51 +462,154 @@ public class ReportTemplateMakerWindow {
     }
 
     /**
-     * 导出模板
+     * 保存模板
      */
-    private void exportTemplate() {
+    private void saveTemplate() {
         if (!isProcessed || templateDirPath == null) {
             showAlert("错误", "请先修复占位符");
             return;
         }
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("保存修复后的模板");
-        fileChooser.setInitialFileName(templateName + "_fixed.docx");
+        // 检查模板目录是否存在，如果存在则询问用户
+        File reportTemplateDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.REPORT_TEMPLATE_DIR));
+        if (!reportTemplateDir.exists()) {
+            reportTemplateDir.mkdirs();
+        }
 
-        FileChooser.ExtensionFilter docxFilter = new FileChooser.ExtensionFilter("Word文档 (*.docx)", "*.docx");
-        fileChooser.getExtensionFilters().add(docxFilter);
+        String saveDirPath = reportTemplateDir.getAbsolutePath() + File.separator + templateName;
+        File saveDir = new File(saveDirPath);
 
-        File saveFile = fileChooser.showSaveDialog(stage);
-        if (saveFile != null) {
-            exportTemplateToFile(saveFile);
+        // 处理重复目录
+        String finalDirPath = saveDirPath;
+        boolean shouldOverride = false;
+
+        if (saveDir.exists()) {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("模板目录已存在");
+                alert.setHeaderText("模板目录 '" + templateName + "' 已存在");
+                alert.setContentText("请选择操作：");
+
+                ButtonType overrideButton = new ButtonType("覆盖现有目录");
+                ButtonType coexistButton = new ButtonType("创建新目录 (" + templateName + "_New)");
+                ButtonType cancelButton = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                alert.getButtonTypes().setAll(overrideButton, coexistButton, cancelButton);
+
+                Optional<ButtonType> result = alert.showAndWait();
+
+                if (result.isPresent()) {
+                    if (result.get() == overrideButton) {
+                        // 用户选择覆盖，在后台线程中执行
+                        executeSaveWithOverride(finalDirPath);
+                    } else if (result.get() == coexistButton) {
+                        // 用户选择共存，生成新的目录名
+                        String newDirPath = finalDirPath + "_New";
+                        executeSaveWithNewName(newDirPath);
+                    }
+                    // 取消则不做任何操作
+                }
+            });
+        } else {
+            // 目录不存在，直接保存
+            executeSaveWithNewName(finalDirPath);
         }
     }
 
     /**
-     * 导出模板到文件
+     * 覆盖现有目录保存模板
      */
-    private void exportTemplateToFile(File targetFile) {
-        updateStatus("正在导出模板...", 0.8);
-        appendLog("开始导出模板到: " + targetFile.getAbsolutePath());
-
+    private void executeSaveWithOverride(String saveDirPath) {
         CompletableFuture.runAsync(() -> {
             try {
-                // 收集需要压缩的文件
-                List<File> filesToCompress = new ArrayList<>();
-                File templateDir = new File(templateDirPath);
-
-                collectFiles(templateDir, filesToCompress);
-
-                // 压缩文件 - 使用目录压缩方式
-                ZipUtils.zip(templateDirPath, targetFile.getAbsolutePath());
+                File saveDir = new File(saveDirPath);
 
                 Platform.runLater(() -> {
-                    updateStatus("模板导出完成！", 1.0);
-                    appendLog("模板导出成功");
-                    appendLog("导出文件大小: " + targetFile.length() + " 字节");
+                    updateStatus("正在清理现有目录...", 0.5);
+                    appendLog("清理现有模板目录: " + saveDirPath);
+                });
 
-                    showAlert("导出完成", "模板导出成功！\n\n请打开检查一下格式有没有混乱。\n如存在混乱可能需要手动调整一下占位符。\n{{{{{MainContent}}}}}占位符消失是正常现象，可以忽略。");
+                // 清理现有目录
+                FileUtils.cleanDirectory(saveDirPath);
+
+                // 继续保存流程
+                continueSaveProcess(saveDirPath, false);
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    LogUtils.error(ReportTemplateMakerWindow.class, "清理现有目录失败", e);
+                    showAlert("错误", "清理现有目录失败：" + e.getMessage());
+                    updateStatus("保存失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * 使用新名称保存模板
+     */
+    private void executeSaveWithNewName(String saveDirPath) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                File saveDir = new File(saveDirPath);
+                if (saveDir.exists()) {
+                    Platform.runLater(() -> {
+                        updateStatus("正在清理目录...", 0.5);
+                        appendLog("清理模板目录: " + saveDirPath);
+                    });
+                    FileUtils.cleanDirectory(saveDirPath);
+                } else {
+                    Platform.runLater(() -> {
+                        updateStatus("正在创建目录...", 0.5);
+                        appendLog("创建新模板目录: " + saveDirPath);
+                    });
+                    saveDir.mkdirs();
+                }
+
+                // 继续保存流程
+                continueSaveProcess(saveDirPath, true);
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    LogUtils.error(ReportTemplateMakerWindow.class, "创建目录失败", e);
+                    showAlert("错误", "创建目录失败：" + e.getMessage());
+                    updateStatus("保存失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * 继续保存流程
+     */
+    private void continueSaveProcess(String saveDirPath, boolean isNewName) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Platform.runLater(() -> {
+                    updateStatus("正在保存模板元文件...", 0.8);
+                    appendLog("开始保存模板元文件到: " + saveDirPath);
+                });
+
+                // 复制所有元文件到目标目录
+                File sourceDir = new File(templateDirPath);
+                copyDirectory(sourceDir, new File(saveDirPath));
+
+                Platform.runLater(() -> {
+                    updateStatus("模板保存完成！", 1.0);
+                    appendLog("模板元文件保存成功");
+                    appendLog("保存位置: " + saveDirPath);
+
+                    // 计算复制的文件数量和总大小
+                    File[] copiedFiles = new File(saveDirPath).listFiles();
+                    int fileCount = copiedFiles != null ? copiedFiles.length : 0;
+                    long totalSize = calculateDirectorySize(new File(saveDirPath));
+                    appendLog("复制文件数量: " + fileCount);
+                    appendLog("总大小: " + totalSize + " 字节");
+
+                    String finalTemplateName = isNewName ? templateName + "_New" : templateName;
+                    showAlert("保存成功", "模板元文件已成功保存到：\n\n" + saveDirPath + "\n\n共 " + fileCount + " 个文件\n您现在可以在主界面中选择使用这个模板了。");
 
                     // 重置状态
                     isProcessed = false;
@@ -465,31 +621,13 @@ public class ReportTemplateMakerWindow {
 
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    LogUtils.error(ReportTemplateMakerWindow.class, "导出模板失败", e);
-                    showAlert("错误", "导出模板失败：" + e.getMessage());
-                    updateStatus("导出失败", 0);
+                    LogUtils.error(ReportTemplateMakerWindow.class, "保存模板失败", e);
+                    showAlert("错误", "保存模板失败：" + e.getMessage());
+                    updateStatus("保存失败", 0);
                     appendLog("错误：" + e.getMessage());
                 });
             }
         });
-    }
-
-    /**
-     * 递归收集文件
-     */
-    private void collectFiles(File dir, List<File> fileList) throws IOException {
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    collectFiles(file, fileList);
-                } else {
-                    // 计算相对路径
-                    String relativePath = file.getAbsolutePath().substring(templateDirPath.length());
-                    fileList.add(file);
-                }
-            }
-        }
     }
 
     /**
@@ -509,6 +647,30 @@ public class ReportTemplateMakerWindow {
         logArea.appendText("[" + timestamp + "] " + message + "\n");
         // 自动滚动到底部
         logArea.setScrollTop(Double.MAX_VALUE);
+    }
+
+    /**
+     * 生成测试docx文件
+     */
+    private String generateTestDocx() {
+        try {
+            // 生成测试文件路径
+            String testDocxPath = templateDirPath + "/" + templateName + "_test_" + MiscUtils.getRandomString(4) + ".docx";
+
+            // 压缩文件为docx
+            ZipUtils.zip(templateDirPath, testDocxPath);
+
+            // 在事件线程中更新UI日志
+            Platform.runLater(() -> appendLog("测试docx生成完成: " + testDocxPath));
+
+            return testDocxPath;
+
+        } catch (Exception e) {
+            LogUtils.error(ReportTemplateMakerWindow.class, "生成测试docx失败", e);
+            // 在事件线程中更新UI日志
+            Platform.runLater(() -> appendLog("错误：生成测试docx失败 - " + e.getMessage()));
+            return null;
+        }
     }
 
     /**
@@ -547,5 +709,61 @@ public class ReportTemplateMakerWindow {
         });
 
         stage.showAndWait();
+    }
+
+    /**
+     * 复制整个目录（排除预览docx文件）
+     */
+    private void copyDirectory(File sourceDir, File targetDir) throws IOException {
+        if (sourceDir.isDirectory()) {
+            if (!targetDir.exists()) {
+                targetDir.mkdir();
+            }
+
+            String[] files = sourceDir.list();
+            if (files != null) {
+                for (String file : files) {
+                    // 跳过预览docx文件（包含"_test_"的docx文件）
+                    if (file.toLowerCase().endsWith(".docx") && file.contains("_test_")) {
+                        Platform.runLater(() -> appendLog("跳过预览文件: " + file));
+                        continue;
+                    }
+
+                    File srcFile = new File(sourceDir, file);
+                    File destFile = new File(targetDir, file);
+
+                    if (srcFile.isDirectory()) {
+                        // 递归复制子目录
+                        copyDirectory(srcFile, destFile);
+                    } else {
+                        // 复制文件
+                        java.nio.file.Files.copy(srcFile.toPath(), destFile.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 计算目录总大小
+     */
+    private long calculateDirectorySize(File directory) {
+        long size = 0;
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        size += calculateDirectorySize(file);
+                    } else {
+                        size += file.length();
+                    }
+                }
+            }
+        } else {
+            size = directory.length();
+        }
+        return size;
     }
 }
