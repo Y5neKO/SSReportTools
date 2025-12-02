@@ -127,3 +127,10 @@ java.lang.IllegalStateException: This operation is permitted on the event thread
 	at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1067) ~[?:1.8.0_431]
 	at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1703) ~[?:1.8.0_431]
 	at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:172) ~[?:1.8.0_431]
+[2025-12-02 20:42:42.377] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.utils.FileUtils - 读取文件失败：/Volumes/Y5Sec/Y5neKO/Project/Java_Project/SSReportTools/created_templates/132/word/document.xml
+[2025-12-02 20:42:42.398] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.ui.MainWindow - 生成报告失败created_templates/132
+[2025-12-02 20:52:49.489] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.utils.FileUtils - 读取文件失败：/Volumes/Y5Sec/Y5neKO/Project/Java_Project/SSReportTools/created_templates/132/word/document.xml
+[2025-12-02 20:52:49.511] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.ui.MainWindow - 生成报告失败created_templates/132
+[2025-12-02 20:55:00.073] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.utils.FileUtils - 读取文件失败：/Volumes/Y5Sec/Y5neKO/Project/Java_Project/SSReportTools/created_templates/132/word/document.xml
+[2025-12-02 20:55:00.479] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.ui.MainWindow - 生成报告失败created_templates/132
+[2025-12-02 20:57:34.424] [JavaFX Application Thread] ERROR com.y5neko.ssrtools.ui.MainWindow - 生成报告失败源路径不存在: /Volumes/Y5Sec/Y5neKO/Project/Java_Project/SSReportTools/temp/doc/customXml

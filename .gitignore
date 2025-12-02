@@ -43,3 +43,6 @@ build/
 .spec-workflow
 .claude
 CLAUDE.md
+
+docs
+logs

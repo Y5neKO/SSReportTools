@@ -13,7 +13,9 @@ import com.y5neko.ssrtools.utils.DocUtils;
 import com.y5neko.ssrtools.utils.FileUtils;
 import com.y5neko.ssrtools.utils.LogUtils;
 import com.y5neko.ssrtools.utils.MiscUtils;
+import com.y5neko.ssrtools.config.GlobalConfig;
 import javafx.beans.binding.Bindings;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -32,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.COMPANY_TEMPLATE_DIR;
 import static com.y5neko.ssrtools.config.GlobalConfig.VULN_TREE_PATH;
@@ -61,12 +64,16 @@ public class MainWindow {
     public TextField totalVulnField;
 
     // 模板相关成员变量
-    private ComboBox<String> templateComboBox;
+    private ComboBox<String> templateComboBox; // 主界面的报告模板选择
+    private ComboBox<String> customerTemplateComboBox; // 客户模板选择
     private TextField templateNameField;
     private Button saveTemplateButton;
     private VBox mainVBox;
     private Button deleteTemplateButton;
     private Button reportTemplateBtn;
+
+    // 当前使用的模板路径
+    private String currentTemplatePath;
 
     // 漏洞库编辑按钮
     private VulnEditorWindow vuLnEditorWindow;
@@ -75,6 +82,9 @@ public class MainWindow {
      * 构造函数
      */
     public MainWindow() {
+        // 初始化当前模板路径为空，使用默认模板
+        this.currentTemplatePath = null;
+
         grid = new GridPane();
         grid.setPadding(new Insets(8));
         grid.setHgap(8);
@@ -236,7 +246,56 @@ public class MainWindow {
 
         HBox vulnBox = new HBox(6, vulnInputBox, vulnInputBox2, vulnInputBox3, vulnInputBox4);
         vulnBox.setAlignment(Pos.CENTER_LEFT);
-        grid.addRow(row++, vulnLabel, vulnBox);
+
+        // 创建模板管理组件
+        this.templateComboBox = new ComboBox<>();
+        templateComboBox.setPrefWidth(150);
+        templateComboBox.setPromptText("选择报告模板");
+        templateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
+
+        // 删除模板按钮
+        Button deleteTemplateBtn = new Button("删除模板");
+        deleteTemplateBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 4px 8px; -fx-font-size: 10px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0;");
+        deleteTemplateBtn.setOnAction(e -> deleteSelectedTemplate());
+
+        // 刷新模板列表的方法
+        refreshTemplateList(templateComboBox);
+
+        // 为下拉框添加点击刷新功能 - 每次展开下拉框时刷新模板列表
+        templateComboBox.setOnShowing(e -> {
+            LogUtils.info(MainWindow.class, "模板下拉框即将展开，刷新模板列表");
+            refreshTemplateList(templateComboBox);
+        });
+
+        // 模板选择事件监听
+        templateComboBox.setOnAction(e -> {
+            String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
+            if (selectedTemplate != null) {
+                currentTemplatePath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + selectedTemplate;
+                LogUtils.info(MainWindow.class, "模板切换到: " + currentTemplatePath);
+
+                // 验证模板目录是否存在
+                String fullPath = MiscUtils.getAbsolutePath(currentTemplatePath);
+                File templateDir = new File(fullPath);
+                LogUtils.info(MainWindow.class, "模板完整路径: " + fullPath);
+                LogUtils.info(MainWindow.class, "模板目录存在: " + templateDir.exists());
+
+                if (!templateDir.exists()) {
+                    showAlert("警告", "选择的模板目录不存在: " + selectedTemplate + "\n路径: " + fullPath);
+                }
+            }
+        });
+
+        // 创建模板管理容器
+        HBox templateManageBox = new HBox(8, templateComboBox, deleteTemplateBtn);
+        templateManageBox.setAlignment(Pos.CENTER_RIGHT);
+
+        // 创建包含漏洞统计和模板管理的容器
+        BorderPane rowContainer = new BorderPane();
+        rowContainer.setLeft(vulnBox);
+        rowContainer.setRight(templateManageBox);
+
+        grid.addRow(row++, vulnLabel, rowContainer);
 
         // ====================================底部按钮=====================================
         // 按钮样式定义
@@ -348,7 +407,7 @@ public class MainWindow {
 
             // ===================================生成报告原始内容=======================================
             DocObj docObj = getDocObjFromUI();
-            String docContent = DocUtils.contentGen(docObj);
+            String docContent = DocUtils.contentGen(docObj, getCurrentTemplatePath());
 
             // ===================================生成漏洞相关========================================
             JSONArray unitsArray = JSON.parseArray(FileUtils.readFile(MiscUtils.getAbsolutePath(VULN_TREE_PATH)));
@@ -440,7 +499,7 @@ public class MainWindow {
             String mainContent = DocUtils.mainContentGen(reportData, docObj);
             String finalContent = docContent.replace("{{{{{MainContent}}}}}", mainContent);
             try {
-                String reportFilePath = DocUtils.docGen(null, finalContent, docObj);
+                String reportFilePath = DocUtils.docGen(getCurrentTemplatePath(), finalContent, docObj);
                 // 弹窗提示生成成功并显示路径，带打开按钮
                 Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
                 successAlert.setTitle("生成成功");
@@ -617,9 +676,9 @@ public class MainWindow {
         Label templateLabel = new Label("选择模板：");
         templateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
-        templateComboBox = new ComboBox<>();
-        templateComboBox.setPromptText("选择客户模板");
-        templateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
+        customerTemplateComboBox = new ComboBox<>();
+        customerTemplateComboBox.setPromptText("选择客户模板");
+        customerTemplateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
 
         Label nameLabel = new Label("模板名称：");
         nameLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
@@ -654,7 +713,7 @@ public class MainWindow {
             }
         });
 
-        templateBox.getChildren().addAll(templateLabel, templateComboBox, nameLabel, templateNameField, saveTemplateButton, deleteTemplateButton);
+        templateBox.getChildren().addAll(templateLabel, customerTemplateComboBox, nameLabel, templateNameField, saveTemplateButton, deleteTemplateButton);
 
         // 将模板标题和容器添加到主界面
         VBox templateContainer = new VBox(6, templateTitle, templateBox);
@@ -664,8 +723,8 @@ public class MainWindow {
         loadTemplateList();
 
         // 下拉框选择模板 → 加载数据
-        templateComboBox.setOnAction(e -> {
-            String selected = templateComboBox.getValue();
+        customerTemplateComboBox.setOnAction(e -> {
+            String selected = customerTemplateComboBox.getValue();
             if (selected != null) {
                 loadTemplate(selected);
                 deleteTemplateButton.setDisable(false);
@@ -687,7 +746,7 @@ public class MainWindow {
 
         // 删除按钮
         deleteTemplateButton.setOnAction(e -> {
-            String selected = templateComboBox.getValue();
+            String selected = customerTemplateComboBox.getValue();
             if (selected == null) {
                 showAlert("错误", "请选择一个模板删除！");
                 return;
@@ -703,7 +762,7 @@ public class MainWindow {
                     if (file.exists() && file.delete()) {
                         showAlert("成功", "模板已删除！");
                         loadTemplateList();
-                        templateComboBox.setValue(null);
+                        customerTemplateComboBox.setValue(null);
                         deleteTemplateButton.setDisable(true);
                         // 清空界面数据，避免残留
                         templateNameField.clear();
@@ -726,11 +785,11 @@ public class MainWindow {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        templateComboBox.getItems().clear();
+        customerTemplateComboBox.getItems().clear();
         File[] files = dir.listFiles((d, name) -> name.endsWith(".json"));
         if (files != null) {
             for (File f : files) {
-                templateComboBox.getItems().add(f.getName().replace(".json", ""));
+                customerTemplateComboBox.getItems().add(f.getName().replace(".json", ""));
             }
         }
     }
@@ -889,6 +948,144 @@ public class MainWindow {
     private void openReportTemplateMaker() {
         ReportTemplateMakerWindow templateMaker = new ReportTemplateMakerWindow();
         templateMaker.show();
+
+        // 模板制作窗口关闭后刷新模板列表
+        templateMaker.getView().sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((obs2, oldWindow, newWindow) -> {
+                    if (oldWindow != null) {
+                        // 窗口关闭后刷新模板列表
+                        Platform.runLater(() -> {
+                            // 查找模板下拉框并刷新
+                            if (templateComboBox != null) {
+                                refreshTemplateList(templateComboBox);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * 刷新模板列表
+     */
+    private void refreshTemplateList(ComboBox<String> comboBox) {
+        comboBox.getItems().clear();
+
+        String templateDir = GlobalConfig.REPORT_TEMPLATE_DIR;
+        File dir = new File(MiscUtils.getAbsolutePath(templateDir));
+
+        if (dir.exists() && dir.isDirectory()) {
+            File[] templateDirs = dir.listFiles(File::isDirectory);
+
+            if (templateDirs != null) {
+                for (File templateDirItem : templateDirs) {
+                    // 跳过隐藏目录和系统目录
+                    if (templateDirItem.getName().startsWith(".")) {
+                        continue;
+                    }
+
+                    // 检查是否包含模板元文件（word目录）
+                    File wordDir = new File(templateDirItem, "word");
+                    if (wordDir.exists() && wordDir.isDirectory()) {
+                        comboBox.getItems().add(templateDirItem.getName());
+
+                        // 如果是当前选中的模板，设置选中状态
+                        String expectedPath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + templateDirItem.getName();
+                        if (expectedPath.equals(currentTemplatePath)) {
+                            comboBox.getSelectionModel().select(templateDirItem.getName());
+                        }
+                    }
+                }
+            }
+        }
+
+        LogUtils.info(MainWindow.class, "已加载 " + comboBox.getItems().size() + " 个模板");
+    }
+
+    /**
+     * 删除选中的模板
+     */
+    private void deleteSelectedTemplate() {
+        if (templateComboBox == null) {
+            showAlert("提示", "模板组件未初始化");
+            return;
+        }
+
+        String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
+        if (selectedTemplate == null || selectedTemplate.trim().isEmpty()) {
+            showAlert("提示", "请先选择要删除的模板");
+            return;
+        }
+
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("确认删除");
+        confirmAlert.setHeaderText("删除模板: " + selectedTemplate);
+        confirmAlert.setContentText("确定要删除模板 '" + selectedTemplate + "' 吗？\n此操作不可撤销，模板相关的所有文件都将被删除。");
+
+        ButtonType confirmButton = new ButtonType("确认删除", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
+        confirmAlert.getButtonTypes().setAll(confirmButton, cancelButton);
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+
+        if (result.isPresent() && result.get() == confirmButton) {
+            try {
+                String templatePath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + selectedTemplate;
+                File templateDir = new File(MiscUtils.getAbsolutePath(templatePath));
+
+                if (templateDir.exists() && templateDir.isDirectory()) {
+                    // 递归删除模板目录
+                    deleteDirectory(templateDir);
+
+                    // 刷新模板列表
+                    refreshTemplateList(templateComboBox);
+
+                    // 如果删除的是当前使用的模板，重置模板路径
+                    if (currentTemplatePath != null && currentTemplatePath.contains(selectedTemplate)) {
+                        currentTemplatePath = null;
+                    }
+
+                    showAlert("成功", "模板 '" + selectedTemplate + "' 已成功删除");
+                    LogUtils.info(MainWindow.class, "模板删除成功: " + selectedTemplate);
+                } else {
+                    showAlert("错误", "模板目录不存在或已被删除");
+                }
+
+            } catch (Exception e) {
+                LogUtils.error(MainWindow.class, "删除模板失败: " + selectedTemplate, e);
+                showAlert("错误", "删除模板失败：" + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 递归删除目录及其所有内容
+     */
+    private void deleteDirectory(File directory) throws IOException {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteDirectory(file);
+                }
+            }
+        }
+        if (!directory.delete()) {
+            throw new IOException("无法删除文件或目录: " + directory.getAbsolutePath());
+        }
+    }
+
+    /**
+     * 获取当前使用的模板路径
+     */
+    public String getCurrentTemplatePath() {
+        if (currentTemplatePath == null || currentTemplatePath.trim().isEmpty()) {
+            // 默认返回硬编码的模板路径
+            return GlobalConfig.DOC_TEMPLATE_PATH;
+        }
+        return currentTemplatePath;
     }
 
 }

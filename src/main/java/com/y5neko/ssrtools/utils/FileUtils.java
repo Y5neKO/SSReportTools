@@ -55,6 +55,13 @@ public class FileUtils {
      */
     public static void copyFolder(String sourcePath, String targetPath) throws IOException {
         Path source = Paths.get(sourcePath);
+
+        // 如果源目录不存在，则跳过
+        if (!Files.exists(source)) {
+            LogUtils.info(FileUtils.class, "源目录不存在，跳过复制: " + sourcePath);
+            return;
+        }
+
         Path target = Paths.get(targetPath);
 
         // 如果目标目录不存在，则创建

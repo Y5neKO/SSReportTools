@@ -9,6 +9,9 @@ import com.y5neko.ssrtools.object.DocObj;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -84,9 +87,14 @@ public class DocUtils {
     }
 
     public static String contentGen(DocObj docObj) {
+        return contentGen(docObj, null);
+    }
+
+    public static String contentGen(DocObj docObj, String templatePath) {
+        String actualTemplatePath = templatePath != null ? templatePath : DOC_TEMPLATE_PATH;
 
         String contentTemplates = FileUtils.readFile(
-                MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/word/document.xml"
+                MiscUtils.getAbsolutePath(actualTemplatePath) + "/word/document.xml"
         );
 
         return contentTemplates
@@ -163,13 +171,23 @@ public class DocUtils {
                 StandardCharsets.UTF_8
         );
 
-        List<String> sources = Arrays.asList(
+        // 动态构建sources列表，只包含存在的路径
+        List<String> sources = new ArrayList<>();
+        String[] possibleSources = {
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/_rels",
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/customXml",
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/docProps",
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word",
                 MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/[Content_Types].xml"
-        );
+        };
+
+        for (String source : possibleSources) {
+            if (Files.exists(Paths.get(source))) {
+                sources.add(source);
+            } else {
+                LogUtils.info(DocUtils.class, "跳过不存在的路径: " + source);
+            }
+        }
 
         String reportPath = MiscUtils.getAbsolutePath(DOC_OUTPUT_DIR) + File.separator +
                 docObj.getCustomerName() +
