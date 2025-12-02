@@ -66,6 +66,7 @@ public class MainWindow {
     private Button saveTemplateButton;
     private VBox mainVBox;
     private Button deleteTemplateButton;
+    private Button reportTemplateBtn;
 
     // 漏洞库编辑按钮
     private VulnEditorWindow vuLnEditorWindow;
@@ -265,17 +266,6 @@ public class MainWindow {
         // 居中逻辑在最底部
         // ================================================================================
 
-        // ============================ 底部按钮事件 =============================
-        // 漏洞库编辑器按钮
-        openVulnEditorBtn.setOnAction(e -> {
-            vuLnEditorWindow = new VulnEditorWindow();
-            vuLnEditorWindow.show();
-        });
-        // 录入漏洞按钮
-        addVulnBtn.setOnAction(e -> {
-            VulnTreeInputWindow vulnTreeInputWindow = new VulnTreeInputWindow();
-            vulnTreeInputWindow.show();
-        });
         // 生成报告按钮
         generateReportBtn.setOnAction(e -> {
             // ===================================填写检测逻辑========================================
@@ -481,14 +471,44 @@ public class MainWindow {
         // 再把 grid 加进 mainVBox
         mainVBox.getChildren().add(grid);
 
-        // =====================================底部按钮容器（用于居中）==================================
-        HBox buttonsHBox = new HBox(10, openVulnEditorBtn, addVulnBtn, generateReportBtn);
-        buttonsHBox.setAlignment(Pos.CENTER);
-        buttonsHBox.setMaxWidth(Double.MAX_VALUE);
-        buttonsHBox.setPadding(new Insets(10, 0, 6, 0));
-        buttonsHBox.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        // 将按钮容器放到底部，整个宽度撑满，按钮居中
-        mainVBox.getChildren().add(buttonsHBox);
+        // =====================================底部按钮容器==================================
+        // 创建报告模板制作按钮
+        String templateBtnStyle = "-fx-background-color: #ff9ff3; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 159, 243, 0.2), 3, 0, 0, 1);";
+        String templateBtnHover = "-fx-background-color: #ff6bb6; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 159, 243, 0.4), 4, 0, 0, 1);";
+
+        reportTemplateBtn = new Button("报告模板制作");
+        reportTemplateBtn.setStyle(templateBtnStyle);
+        reportTemplateBtn.setOnMouseEntered(e -> reportTemplateBtn.setStyle(templateBtnHover));
+        reportTemplateBtn.setOnMouseExited(e -> reportTemplateBtn.setStyle(templateBtnStyle));
+
+        // 报告模板制作按钮点击事件
+        reportTemplateBtn.setOnAction(e -> openReportTemplateMaker());
+
+        // 设置其他按钮的事件处理
+        openVulnEditorBtn.setOnAction(e -> {
+            vuLnEditorWindow = new VulnEditorWindow();
+            vuLnEditorWindow.show();
+        });
+
+        addVulnBtn.setOnAction(e -> {
+            VulnTreeInputWindow vulnTreeInputWindow = new VulnTreeInputWindow();
+            vulnTreeInputWindow.show();
+        });
+
+        // 右侧其他按钮容器
+        HBox rightButtonsHBox = new HBox(10, openVulnEditorBtn, addVulnBtn, generateReportBtn);
+        rightButtonsHBox.setAlignment(Pos.CENTER_RIGHT);
+        rightButtonsHBox.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        // 创建底部总容器，使用BorderPane布局
+        BorderPane bottomPane = new BorderPane();
+        bottomPane.setLeft(reportTemplateBtn);
+        bottomPane.setRight(rightButtonsHBox);
+        bottomPane.setPadding(new Insets(10, 15, 6, 15));
+        bottomPane.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        // 将底部容器添加到主VBox
+        mainVBox.getChildren().add(bottomPane);
         // ================================================================================
 
         scrollPane = new ScrollPane(mainVBox);
@@ -861,6 +881,14 @@ public class MainWindow {
                 showAlert("错误", "无法打开文件夹：" + ex.getMessage());
             }
         }
+    }
+
+    /**
+     * 打开报告模板制作窗口
+     */
+    private void openReportTemplateMaker() {
+        ReportTemplateMakerWindow templateMaker = new ReportTemplateMakerWindow();
+        templateMaker.show();
     }
 
 }
