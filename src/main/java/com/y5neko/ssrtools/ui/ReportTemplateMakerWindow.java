@@ -4,55 +4,66 @@ import com.y5neko.ssrtools.config.GlobalConfig;
 import com.y5neko.ssrtools.utils.FileUtils;
 import com.y5neko.ssrtools.utils.LogUtils;
 import com.y5neko.ssrtools.utils.MiscUtils;
-import javafx.application.Application;
+import com.y5neko.ssrtools.utils.ZipUtils;
+import com.y5neko.ssrtools.utils.WordPlaceholderTest;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static com.y5neko.ssrtools.config.GlobalConfig.REPORT_TEMPLATE_DIR;
+import static com.y5neko.ssrtools.config.GlobalConfig.TEMPLATE_MAKER_CACHE_DIR;
 
 /**
  * 报告模板制作窗口
- * 用于快速制作和管理报告模板
+ * 用于上传、修复和导出Word模板文件
  */
 public class ReportTemplateMakerWindow {
 
     private Stage stage;
-    private GridPane grid;
+    private VBox mainContainer;
 
-    // 基本信息字段
-    private TextField templateNameField;
-    private TextArea templateDescField;
-    private ComboBox<String> templateTypeComboBox;
+    // 界面组件
+    private Label statusLabel;
+    private ProgressBar progressBar;
+    private Button uploadButton;
+    private Button fixButton;
+    private Button exportButton;
+    private TextArea logArea;
 
-    // 模板内容字段
-    private TextField customerNameField;
-    private TextField contractorNameField;
-    private TextField reportAuthorField;
-    private TextField testerField;
-    private TextField managerField;
+    // 文件状态
+    private File uploadedFile;
+    private String templateDirPath;
+    private String templateName;
+    private boolean isProcessed = false;
 
     // 按钮样式
-    private String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 3, 0, 0, 1);";
-    private String primaryBtnHover = "-fx-background-color: #3651de; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.4), 4, 0, 0, 1);";
+    private String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 3, 0, 0, 1);";
+    private String primaryBtnHover = "-fx-background-color: #3651de; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.4), 4, 0, 0, 1);";
 
-    private String secondaryBtnStyle = "-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.2), 3, 0, 0, 1);";
-    private String secondaryBtnHover = "-fx-background-color: #5ba3f5; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.4), 4, 0, 0, 1);";
+    private String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.2), 3, 0, 0, 1);";
+    private String successBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.4), 4, 0, 0, 1);";
 
-    private String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.2), 3, 0, 0, 1);";
-    private String successBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.4), 4, 0, 0, 1);";
+    private String warningBtnStyle = "-fx-background-color: #fd9644; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(253, 150, 68, 0.2), 3, 0, 0, 1);";
+    private String warningBtnHover = "-fx-background-color: #fa8231; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(253, 150, 68, 0.4), 4, 0, 0, 1);";
 
     public ReportTemplateMakerWindow() {
+        // 启动时清理缓存目录
+        clearCacheDirectory();
         setupUI();
         setupEventHandlers();
     }
@@ -61,232 +72,443 @@ public class ReportTemplateMakerWindow {
      * 设置UI界面
      */
     private void setupUI() {
-        grid = new GridPane();
-        grid.setPadding(new Insets(12));
-        grid.setHgap(10);
-        grid.setVgap(8);
-        grid.setStyle("-fx-background-color: #f5f7fa; -fx-background-radius: 4px;");
-
-        // 列约束
-        ColumnConstraints col1 = new ColumnConstraints();
-        col1.setHgrow(Priority.NEVER);
-        col1.setMinWidth(80);
-        ColumnConstraints col2 = new ColumnConstraints();
-        col2.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(col1, col2);
-
-        int row = 0;
+        mainContainer = new VBox(15);
+        mainContainer.setPadding(new Insets(20));
+        mainContainer.setStyle("-fx-background-color: #f8f9fa;");
 
         // 标题
-        Label titleLabel = new Label("报告模板制作");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
-        GridPane.setColumnSpan(titleLabel, 2);
-        grid.add(titleLabel, 0, row++);
+        Label titleLabel = new Label("报告模板制作工具");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
+        mainContainer.getChildren().add(titleLabel);
+
+        // 说明文本
+        Label descLabel = new Label("上传Word模板文件，自动修复占位符，然后导出可用的模板文件");
+        descLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #636e72;");
+        mainContainer.getChildren().add(descLabel);
 
         // 分隔线
         Separator separator = new Separator();
-        GridPane.setColumnSpan(separator, 2);
-        grid.add(separator, 0, row++);
+        mainContainer.getChildren().add(separator);
 
-        // 基本信息
-        Label basicInfoLabel = new Label("基本信息");
-        basicInfoLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
-        GridPane.setColumnSpan(basicInfoLabel, 2);
-        grid.add(basicInfoLabel, 0, row++);
+        // 文件上传区域
+        VBox uploadBox = createUploadArea();
+        mainContainer.getChildren().add(uploadBox);
 
-        // 模板名称
-        Label nameLabel = new Label("模板名称：");
-        nameLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
-        grid.add(nameLabel, 0, row);
-        templateNameField = new TextField();
-        templateNameField.setPromptText("输入模板名称，如：标准金融行业报告模板");
-        templateNameField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
-        grid.add(templateNameField, 1, row++);
+        // 操作按钮区域
+        HBox buttonBox = createButtonArea();
+        mainContainer.getChildren().add(buttonBox);
 
-        // 模板类型
-        Label typeLabel = new Label("模板类型：");
-        typeLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
-        grid.add(typeLabel, 0, row);
-        templateTypeComboBox = new ComboBox<>();
-        templateTypeComboBox.getItems().addAll("通用模板", "金融行业", "医疗行业", "政府机构", "教育机构", "电商企业", "其他");
-        templateTypeComboBox.setValue("通用模板");
-        templateTypeComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
-        grid.add(templateTypeComboBox, 1, row++);
+        // 进度条和状态
+        VBox statusBox = createStatusArea();
+        mainContainer.getChildren().add(statusBox);
 
-        // 模板描述
-        Label descLabel = new Label("模板描述：");
-        descLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
-        grid.add(descLabel, 0, row);
-        templateDescField = new TextArea();
-        templateDescField.setPromptText("输入模板描述，说明适用场景和特点");
-        templateDescField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
-        templateDescField.setPrefRowCount(3);
-        grid.add(templateDescField, 1, row++);
+        // 日志区域
+        VBox logBox = createLogArea();
+        mainContainer.getChildren().add(logBox);
 
-        // 预设内容
-        Label presetLabel = new Label("预设内容");
-        presetLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
-        GridPane.setColumnSpan(presetLabel, 2);
-        grid.add(presetLabel, 0, row++);
+        VBox.setVgrow(logBox, Priority.ALWAYS);
+    }
 
-        String fieldStyle = "-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;";
-        String labelStyle = "-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;";
+    /**
+     * 创建文件上传区域
+     */
+    private VBox createUploadArea() {
+        VBox uploadBox = new VBox(10);
+        uploadBox.setPadding(new Insets(15));
+        uploadBox.setStyle("-fx-background-color: white; -fx-border-radius: 8px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
 
-        // 检测机构
-        Label contractorLabel = new Label("检测机构：");
-        contractorLabel.setStyle(labelStyle);
-        grid.add(contractorLabel, 0, row);
-        contractorNameField = new TextField();
-        contractorNameField.setPromptText("默认检测机构名称");
-        contractorNameField.setStyle(fieldStyle);
-        grid.add(contractorNameField, 1, row++);
+        Label uploadTitle = new Label("📁 文件上传");
+        uploadTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
+        uploadBox.getChildren().add(uploadTitle);
 
-        // 报告作者
-        Label authorLabel = new Label("报告作者：");
-        authorLabel.setStyle(labelStyle);
-        grid.add(authorLabel, 0, row);
-        reportAuthorField = new TextField();
-        reportAuthorField.setPromptText("默认报告作者");
-        reportAuthorField.setStyle(fieldStyle);
-        grid.add(reportAuthorField, 1, row++);
+        uploadButton = new Button("选择Word模板文件 (.doc/.docx)");
+        uploadButton.setStyle(primaryBtnStyle);
+        uploadButton.setOnMouseEntered(e -> uploadButton.setStyle(primaryBtnHover));
+        uploadButton.setOnMouseExited(e -> uploadButton.setStyle(primaryBtnStyle));
+        uploadBox.getChildren().add(uploadButton);
 
-        // 测试人员
-        Label testerLabel = new Label("测试人员：");
-        testerLabel.setStyle(labelStyle);
-        grid.add(testerLabel, 0, row);
-        testerField = new TextField();
-        testerField.setPromptText("默认测试人员");
-        testerField.setStyle(fieldStyle);
-        grid.add(testerField, 1, row++);
+        return uploadBox;
+    }
 
-        // 项目经理
-        Label managerLabel = new Label("项目经理：");
-        managerLabel.setStyle(labelStyle);
-        grid.add(managerLabel, 0, row);
-        managerField = new TextField();
-        managerField.setPromptText("默认项目经理");
-        managerField.setStyle(fieldStyle);
-        grid.add(managerField, 1, row++);
-
-        // 底部按钮
+    /**
+     * 创建操作按钮区域
+     */
+    private HBox createButtonArea() {
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(10, 0, 5, 0));
+        buttonBox.setPadding(new Insets(10, 0, 10, 0));
 
-        Button saveButton = new Button("保存模板");
-        saveButton.setStyle(successBtnStyle);
-        saveButton.setOnMouseEntered(e -> saveButton.setStyle(successBtnHover));
-        saveButton.setOnMouseExited(e -> saveButton.setStyle(successBtnStyle));
+        fixButton = new Button("🔧 修复占位符");
+        fixButton.setStyle(warningBtnStyle);
+        fixButton.setOnMouseEntered(e -> fixButton.setStyle(warningBtnHover));
+        fixButton.setOnMouseExited(e -> fixButton.setStyle(warningBtnStyle));
+        fixButton.setDisable(true);
 
-        Button clearButton = new Button("清空内容");
-        clearButton.setStyle(secondaryBtnStyle);
-        clearButton.setOnMouseEntered(e -> clearButton.setStyle(secondaryBtnHover));
-        clearButton.setOnMouseExited(e -> clearButton.setStyle(secondaryBtnStyle));
+        exportButton = new Button("💾 导出模板");
+        exportButton.setStyle(successBtnStyle);
+        exportButton.setOnMouseEntered(e -> exportButton.setStyle(successBtnHover));
+        exportButton.setOnMouseExited(e -> exportButton.setStyle(successBtnStyle));
+        exportButton.setDisable(true);
 
-        Button cancelButton = new Button("取消");
-        cancelButton.setStyle(primaryBtnStyle);
-        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(primaryBtnHover));
-        cancelButton.setOnMouseExited(e -> cancelButton.setStyle(primaryBtnStyle));
+        buttonBox.getChildren().addAll(fixButton, exportButton);
+        return buttonBox;
+    }
 
-        buttonBox.getChildren().addAll(saveButton, clearButton, cancelButton);
-        GridPane.setColumnSpan(buttonBox, 2);
-        grid.add(buttonBox, 0, row);
+    /**
+     * 创建状态区域
+     */
+    private VBox createStatusArea() {
+        VBox statusBox = new VBox(5);
+        statusBox.setPadding(new Insets(10));
+        statusBox.setStyle("-fx-background-color: white; -fx-border-radius: 8px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
+
+        statusLabel = new Label("等待上传文件...");
+        statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #636e72;");
+        statusBox.getChildren().add(statusLabel);
+
+        progressBar = new ProgressBar();
+        progressBar.setProgress(0);
+        progressBar.setVisible(false);
+        statusBox.getChildren().add(progressBar);
+
+        return statusBox;
+    }
+
+    /**
+     * 创建日志区域
+     */
+    private VBox createLogArea() {
+        VBox logBox = new VBox(5);
+        logBox.setPadding(new Insets(10));
+        logBox.setStyle("-fx-background-color: white; -fx-border-radius: 8px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
+        logBox.setMinHeight(200);
+
+        Label logTitle = new Label("📝 操作日志");
+        logTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
+        logBox.getChildren().add(logTitle);
+
+        logArea = new TextArea();
+        logArea.setEditable(false);
+        logArea.setStyle("-fx-font-family: 'Consolas', 'Monaco', monospace; -fx-font-size: 11px; -fx-background-color: #f8f9fa; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
+        logArea.setPrefRowCount(10);
+        logBox.getChildren().add(logArea);
+
+        return logBox;
+    }
+
+    /**
+     * 清理缓存目录
+     */
+    private void clearCacheDirectory() {
+        try {
+            String cachePath = MiscUtils.getAbsolutePath(TEMPLATE_MAKER_CACHE_DIR);
+            File cacheDir = new File(cachePath);
+            if (cacheDir.exists()) {
+                FileUtils.cleanDirectory(cachePath);
+                LogUtils.info(ReportTemplateMakerWindow.class, "已清理模板制作缓存目录: " + cachePath);
+            }
+        } catch (Exception e) {
+            LogUtils.error(ReportTemplateMakerWindow.class, "清理缓存目录失败", e);
+        }
     }
 
     /**
      * 设置事件处理器
      */
     private void setupEventHandlers() {
-        // 获取按钮引用
-        Button saveButton = (Button) ((HBox) grid.getChildren().get(grid.getChildren().size() - 1)).getChildren().get(0);
-        Button clearButton = (Button) ((HBox) grid.getChildren().get(grid.getChildren().size() - 1)).getChildren().get(1);
-        Button cancelButton = (Button) ((HBox) grid.getChildren().get(grid.getChildren().size() - 1)).getChildren().get(2);
-
-        // 保存按钮事件
-        saveButton.setOnAction(e -> saveTemplate());
-
-        // 清空按钮事件
-        clearButton.setOnAction(e -> clearFields());
-
-        // 取消按钮事件
-        cancelButton.setOnAction(e -> stage.close());
+        uploadButton.setOnAction(e -> uploadFile());
+        fixButton.setOnAction(e -> fixPlaceholders());
+        exportButton.setOnAction(e -> exportTemplate());
     }
 
     /**
-     * 保存模板
+     * 上传文件
      */
-    private void saveTemplate() {
-        if (templateNameField.getText().trim().isEmpty()) {
-            showAlert("错误", "请输入模板名称");
+    private void uploadFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("选择Word模板文件");
+
+        // 设置文件过滤器
+        FileChooser.ExtensionFilter docFilter = new FileChooser.ExtensionFilter("Word文档 (*.doc, *.docx)", "*.doc", "*.docx");
+        FileChooser.ExtensionFilter allFilter = new FileChooser.ExtensionFilter("所有文件", "*.*");
+        fileChooser.getExtensionFilters().addAll(docFilter, allFilter);
+
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+            // 如果之前有处理的文件，先清理缓存
+            if (isProcessed) {
+                clearCacheDirectory();
+                isProcessed = false;
+                fixButton.setDisable(true);
+                exportButton.setDisable(true);
+                uploadButton.setText("📁 选择Word模板文件 (.doc/.docx)");
+                updateStatus("等待上传文件...", 0);
+                logArea.clear();
+            }
+            uploadedFile = selectedFile;
+            processUploadedFile();
+        }
+    }
+
+    /**
+     * 处理上传的文件
+     */
+    private void processUploadedFile() {
+        updateStatus("正在处理上传的文件...", 0.1);
+        appendLog("开始处理文件: " + uploadedFile.getName());
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 获取文件名（不带扩展名）
+                String fileName = uploadedFile.getName();
+                int dotIndex = fileName.lastIndexOf('.');
+                templateName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+
+                // 创建缓存目录
+                File cacheDir = new File(MiscUtils.getAbsolutePath(TEMPLATE_MAKER_CACHE_DIR));
+                if (!cacheDir.exists()) {
+                    cacheDir.mkdirs();
+                }
+
+                final String finalTemplateDirPath = cacheDir.getAbsolutePath() + File.separator + templateName;
+                File newTemplateDir = new File(finalTemplateDirPath);
+                final boolean isCleaned = newTemplateDir.exists();
+                if (isCleaned) {
+                    FileUtils.cleanDirectory(finalTemplateDirPath);
+                } else {
+                    newTemplateDir.mkdirs();
+                }
+
+                Platform.runLater(() -> {
+                    updateStatus("正在解压文件...", 0.3);
+                    appendLog("开始解压文件到缓存目录");
+                    if (isCleaned) {
+                        appendLog("清理现有缓存目录: " + finalTemplateDirPath);
+                    } else {
+                        appendLog("创建缓存目录: " + finalTemplateDirPath);
+                    }
+                });
+
+                // 设置类变量
+                templateDirPath = finalTemplateDirPath;
+
+                // 解压文件到缓存目录
+                if (uploadedFile.getName().toLowerCase().endsWith(".docx")) {
+                    ZipUtils.extractZip(uploadedFile.getAbsolutePath(), templateDirPath);
+                } else {
+                    // 对于.doc文件，提示用户
+                    Platform.runLater(() -> {
+                        showAlert("提示", "请将.doc文件转换为.docx格式后再上传");
+                        updateStatus("等待上传文件...", 0);
+                        return;
+                    });
+                    return;
+                }
+
+                Platform.runLater(() -> {
+                    updateStatus("检查解压结果...", 0.6);
+                    appendLog("文件解压完成");
+                });
+
+                // 验证解压结果
+                File documentXml = new File(templateDirPath + "/word/document.xml");
+                if (!documentXml.exists()) {
+                    Platform.runLater(() -> {
+                        showAlert("错误", "文件格式不正确，无法找到document.xml文件");
+                        updateStatus("解压失败", 0);
+                        appendLog("错误：找不到document.xml文件");
+                    });
+                    return;
+                }
+
+                Platform.runLater(() -> {
+                    updateStatus("文件上传成功！可以开始修复占位符", 1.0);
+                    appendLog("文件验证成功，准备修复占位符");
+                    appendLog("找到document.xml文件，大小: " + documentXml.length() + " 字节");
+
+                    // 启用修复按钮
+                    fixButton.setDisable(false);
+                    uploadButton.setText("📁 重新选择文件");
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    LogUtils.error(ReportTemplateMakerWindow.class, "处理上传文件失败", e);
+                    showAlert("错误", "处理文件失败：" + e.getMessage());
+                    updateStatus("处理失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * 修复占位符
+     */
+    private void fixPlaceholders() {
+        if (templateDirPath == null) {
+            showAlert("错误", "请先上传文件");
             return;
         }
 
-        try {
-            // 创建模板目录
-            File templateDir = new File(MiscUtils.getAbsolutePath(REPORT_TEMPLATE_DIR));
-            if (!templateDir.exists()) {
-                templateDir.mkdirs();
+        updateStatus("正在修复占位符...", 0.5);
+        appendLog("开始修复占位符...");
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                String documentXmlPath = templateDirPath + "/word/document.xml";
+                String oldDocumentXmlPath = templateDirPath + "/word/old_document.xml";
+
+                // 备份原始文件（如果存在则覆盖）
+                Files.copy(Paths.get(documentXmlPath), Paths.get(oldDocumentXmlPath),
+                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                Platform.runLater(() -> {
+                    appendLog("已备份原始文件为: old_document.xml");
+                });
+
+                // 读取文件内容
+                String originalContent = FileUtils.readFile(documentXmlPath);
+
+                // 调用修复逻辑
+                String fixedContent = WordPlaceholderTest.fixPlaceholders(originalContent);
+
+                if (fixedContent != null) {
+                    // 写入修复后的内容
+                    FileUtils.overwrite(documentXmlPath, fixedContent, StandardCharsets.UTF_8);
+
+                    Platform.runLater(() -> {
+                        updateStatus("占位符修复完成！可以导出模板", 1.0);
+                        appendLog("占位符修复成功");
+                        appendLog("修复统计：");
+                        appendLog("- 原始完整占位符: " + WordPlaceholderTest.getOriginalPlaceholderCount());
+                        appendLog("- 修复后完整占位符: " + WordPlaceholderTest.getFixedPlaceholderCount());
+
+                        // 启用导出按钮
+                        exportButton.setDisable(false);
+                        fixButton.setDisable(true);
+                        isProcessed = true;
+                    });
+                } else {
+                    Platform.runLater(() -> {
+                        updateStatus("占位符修复失败", 0);
+                        appendLog("占位符修复失败");
+                        showAlert("错误", "占位符修复失败");
+                    });
+                }
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    LogUtils.error(ReportTemplateMakerWindow.class, "修复占位符失败", e);
+                    showAlert("错误", "修复占位符失败：" + e.getMessage());
+                    updateStatus("修复失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
             }
+        });
+    }
 
-            // 构建模板数据
-            String templateData = buildTemplateData();
+    /**
+     * 导出模板
+     */
+    private void exportTemplate() {
+        if (!isProcessed || templateDirPath == null) {
+            showAlert("错误", "请先修复占位符");
+            return;
+        }
 
-            // 保存到文件
-            String fileName = templateNameField.getText().trim() + ".json";
-            File templateFile = new File(templateDir, fileName);
-            FileUtils.overwrite(templateFile.getAbsolutePath(), templateData, StandardCharsets.UTF_8);
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("保存修复后的模板");
+        fileChooser.setInitialFileName(templateName + "_fixed.docx");
 
-            showAlert("成功", "模板保存成功！");
-            stage.close();
+        FileChooser.ExtensionFilter docxFilter = new FileChooser.ExtensionFilter("Word文档 (*.docx)", "*.docx");
+        fileChooser.getExtensionFilters().add(docxFilter);
 
-        } catch (IOException ex) {
-            LogUtils.error(ReportTemplateMakerWindow.class, "保存模板失败：" + ex.getMessage());
-            showAlert("错误", "保存模板失败：" + ex.getMessage());
+        File saveFile = fileChooser.showSaveDialog(stage);
+        if (saveFile != null) {
+            exportTemplateToFile(saveFile);
         }
     }
 
     /**
-     * 构建模板数据
+     * 导出模板到文件
      */
-    private String buildTemplateData() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        sb.append("  \"templateName\": \"").append(escapeJson(templateNameField.getText().trim())).append("\",\n");
-        sb.append("  \"templateType\": \"").append(escapeJson(templateTypeComboBox.getValue())).append("\",\n");
-        sb.append("  \"templateDescription\": \"").append(escapeJson(templateDescField.getText().trim())).append("\",\n");
-        sb.append("  \"createTime\": \"").append(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).append("\",\n");
-        sb.append("  \"defaultValues\": {\n");
-        sb.append("    \"contractorName\": \"").append(escapeJson(contractorNameField.getText().trim())).append("\",\n");
-        sb.append("    \"reportAuthor\": \"").append(escapeJson(reportAuthorField.getText().trim())).append("\",\n");
-        sb.append("    \"testerName\": \"").append(escapeJson(testerField.getText().trim())).append("\",\n");
-        sb.append("    \"managerName\": \"").append(escapeJson(managerField.getText().trim())).append("\"\n");
-        sb.append("  }\n");
-        sb.append("}");
-        return sb.toString();
+    private void exportTemplateToFile(File targetFile) {
+        updateStatus("正在导出模板...", 0.8);
+        appendLog("开始导出模板到: " + targetFile.getAbsolutePath());
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 收集需要压缩的文件
+                List<File> filesToCompress = new ArrayList<>();
+                File templateDir = new File(templateDirPath);
+
+                collectFiles(templateDir, filesToCompress);
+
+                // 压缩文件 - 使用目录压缩方式
+                ZipUtils.zip(templateDirPath, targetFile.getAbsolutePath());
+
+                Platform.runLater(() -> {
+                    updateStatus("模板导出完成！", 1.0);
+                    appendLog("模板导出成功");
+                    appendLog("导出文件大小: " + targetFile.length() + " 字节");
+
+                    showAlert("导出完成", "模板导出成功！\n\n请打开检查一下格式有没有混乱。\n如存在混乱可能需要手动调整一下占位符。\n{{{{{MainContent}}}}}占位符消失是正常现象，可以忽略。");
+
+                    // 重置状态
+                    isProcessed = false;
+                    exportButton.setDisable(true);
+                    fixButton.setDisable(true);
+                    uploadButton.setText("📁 选择Word模板文件 (.doc/.docx)");
+                    updateStatus("等待上传文件...", 0);
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    LogUtils.error(ReportTemplateMakerWindow.class, "导出模板失败", e);
+                    showAlert("错误", "导出模板失败：" + e.getMessage());
+                    updateStatus("导出失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
     }
 
     /**
-     * 转义JSON字符串
+     * 递归收集文件
      */
-    private String escapeJson(String input) {
-        return input.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "\\r")
-                   .replace("\t", "\\t");
+    private void collectFiles(File dir, List<File> fileList) throws IOException {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    collectFiles(file, fileList);
+                } else {
+                    // 计算相对路径
+                    String relativePath = file.getAbsolutePath().substring(templateDirPath.length());
+                    fileList.add(file);
+                }
+            }
+        }
     }
 
     /**
-     * 清空所有字段
+     * 更新状态
      */
-    private void clearFields() {
-        templateNameField.clear();
-        templateDescField.clear();
-        contractorNameField.clear();
-        reportAuthorField.clear();
-        testerField.clear();
-        managerField.clear();
-        templateTypeComboBox.setValue("通用模板");
+    private void updateStatus(String message, double progress) {
+        statusLabel.setText(message);
+        progressBar.setProgress(progress);
+        progressBar.setVisible(progress > 0 && progress < 1.0);
+    }
+
+    /**
+     * 添加日志
+     */
+    private void appendLog(String message) {
+        String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        logArea.appendText("[" + timestamp + "] " + message + "\n");
+        // 自动滚动到底部
+        logArea.setScrollTop(Double.MAX_VALUE);
     }
 
     /**
@@ -304,7 +526,7 @@ public class ReportTemplateMakerWindow {
      * 获取主视图
      */
     public Parent getView() {
-        return grid;
+        return mainContainer;
     }
 
     /**
@@ -312,11 +534,18 @@ public class ReportTemplateMakerWindow {
      */
     public void show() {
         stage = new Stage();
-        stage.setTitle("报告模板制作");
-        stage.setScene(new Scene(getView(), 500, 600));
+        stage.setTitle("报告模板制作工具");
+        stage.setScene(new Scene(getView(), 600, 700));
         stage.setResizable(true);
-        stage.setMinWidth(450);
-        stage.setMinHeight(500);
+        stage.setMinWidth(550);
+        stage.setMinHeight(600);
+
+        // 添加窗口关闭事件处理
+        stage.setOnCloseRequest(event -> {
+            clearCacheDirectory();
+            stage.close();
+        });
+
         stage.showAndWait();
     }
 }

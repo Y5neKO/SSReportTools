@@ -573,6 +573,10 @@ public class WordPlaceholderTest {
         while (originalMatcher.find()) originalCount++;
         while (fixedMatcher.find()) fixedCount++;
 
+        // 设置全局统计变量
+        originalPlaceholderCount = originalCount;
+        fixedPlaceholderCount = fixedCount;
+
         System.out.println("=== 修复统计 ===");
         System.out.println("原始完整占位符数量: " + originalCount);
         System.out.println("修复后完整占位符数量: " + fixedCount);
@@ -615,16 +619,17 @@ public class WordPlaceholderTest {
 
         String result = xml;
         int processedCount = 0;
+        int searchStartPos = 0; // 搜索起始位置，避免重复处理
 
         // 循环处理所有可能的MainContent占位符（防止有多个）
         while (true) {
-            // 1. 先找到MainContent占位符的位置
-            int mainContentPos = result.indexOf("{{{{{MainContent}}}}}");
+            // 1. 先找到MainContent占位符的位置（从searchStartPos开始搜索）
+            int mainContentPos = result.indexOf("{{{{{MainContent}}}}}", searchStartPos);
             if (mainContentPos == -1) {
                 break; // 没有更多MainContent占位符了
             }
 
-            System.out.println("  找到MainContent位置: " + mainContentPos);
+            System.out.println("  找到MainContent位置: " + mainContentPos + " (搜索从: " + searchStartPos + ")");
 
             // 2. 向前查找最近的<w:p>开始位置，但要确保是正确的段落开始
             int pStart = findCorrectParagraphStart(result, mainContentPos);
@@ -654,17 +659,29 @@ public class WordPlaceholderTest {
             System.out.println("  段落内容长度: " + originalParagraph.length());
             System.out.println("  段落前100字符: " + originalParagraph.substring(0, Math.min(100, originalParagraph.length())));
 
-            // 5. 验证这个段落确实包含MainContent占位符
+            // 5. 验证这个段落确实包含MainContent占位符（使用搜索时的格式）
             if (!originalParagraph.contains("{{{{{MainContent}}}}}")) {
                 System.out.println("  错误：找到的段落不包含MainContent占位符，跳过");
-                break;
+                // 跳过这个位置，从下一个位置继续搜索
+                searchStartPos = mainContentPos + 1;
+                continue;
             }
 
             // 6. 替换整个段落为纯占位符
-            result = result.substring(0, pStart) + "{{{{{MainContent}}}}" + result.substring(pEnd);
+            String placeholderToInsert = "{{{{{MainContent}}}}}";
+            String beforeReplace = result.substring(0, pStart);
+            String afterReplace = result.substring(pEnd);
+            result = beforeReplace + placeholderToInsert + afterReplace;
             processedCount++;
 
             System.out.println("  替换MainContent段落完成");
+            System.out.println("  插入的占位符: " + placeholderToInsert);
+
+            // 7. 更新搜索起始位置到替换后的位置之后，避免重复处理
+            searchStartPos = pStart + placeholderToInsert.length();
+
+            // 验证替换结果
+            System.out.println("  下次搜索将从位置: " + searchStartPos);
         }
 
         System.out.println("总共处理了 " + processedCount + " 个MainContent段落");
@@ -740,5 +757,23 @@ public class WordPlaceholderTest {
         }
 
         return -1;
+    }
+
+    // 统计信息
+    private static int originalPlaceholderCount = 0;
+    private static int fixedPlaceholderCount = 0;
+
+    /**
+     * 获取原始占位符数量
+     */
+    public static int getOriginalPlaceholderCount() {
+        return originalPlaceholderCount;
+    }
+
+    /**
+     * 获取修复后占位符数量
+     */
+    public static int getFixedPlaceholderCount() {
+        return fixedPlaceholderCount;
     }
 }

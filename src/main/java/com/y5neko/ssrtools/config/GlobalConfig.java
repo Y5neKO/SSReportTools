@@ -6,6 +6,7 @@ package com.y5neko.ssrtools.config;
 public class GlobalConfig {
     public static final String COMPANY_TEMPLATE_DIR = "config/templates";
     public static final String REPORT_TEMPLATE_DIR = "created_templates";
+    public static final String TEMPLATE_MAKER_CACHE_DIR = "template_maker_cache";
     public static final String VULN_TREE_PATH = "config/vuln_tree.json";
     public static final String VULN_WIKI_FILE_PATH = "config/VulnWiki.yml";
     public static final String DOC_TEMPLATE_PATH = "templates/渗透测试报告模板";

@@ -95,7 +95,52 @@ public class ZipUtils {
         }
     }
 
-    public static void main(String[] args) {
+    /**
+     * 解压ZIP文件到指定目录
+     * @param zipPath ZIP文件路径
+     * @param destPath 解压目标目录
+     * @throws IOException 如果发生IO错误
+     */
+    public static void extractZip(String zipPath, String destPath) throws IOException {
+        File destDir = new File(destPath);
+        if (!destDir.exists()) {
+            destDir.mkdirs();
+        }
+
+        try (ZipInputStream zis = new ZipInputStream(
+                Files.newInputStream(Paths.get(zipPath)))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String entryName = entry.getName();
+                File entryFile = new File(destDir, entryName);
+
+                // 确保解压路径不跳出目标目录（安全检查）
+                if (!entryFile.getCanonicalPath().startsWith(destDir.getCanonicalPath())) {
+                    throw new IOException("非法的ZIP条目路径: " + entryName);
+                }
+
+                if (entry.isDirectory()) {
+                    // 创建目录
+                    entryFile.mkdirs();
+                } else {
+                    // 创建父目录
+                    entryFile.getParentFile().mkdirs();
+
+                    // 解压文件
+                    try (FileOutputStream fos = new FileOutputStream(entryFile)) {
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+    }
+
+  public static void main(String[] args) {
         List<String> sources = Arrays.asList(
                 MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/_rels",
                 MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH) + "/customXml",
