@@ -26,9 +26,11 @@ public class GUI extends Application {
 
         // 显示主界面
         MainWindow mainView = new MainWindow();
-        Scene scene = new Scene(mainView.getView(), 800, 500);
+        Scene scene = new Scene(mainView.getView(), 650, 480);
 
         stage.setScene(scene);
+        stage.setMinWidth(600);
+        stage.setMinHeight(420);
         stage.show();
 
         // 初始化 ScenicView

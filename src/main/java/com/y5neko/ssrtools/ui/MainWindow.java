@@ -75,9 +75,10 @@ public class MainWindow {
      */
     public MainWindow() {
         grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setHgap(15);
-        grid.setVgap(10);
+        grid.setPadding(new Insets(8));
+        grid.setHgap(8);
+        grid.setVgap(7);
+        grid.setStyle("-fx-background-color: #f5f7fa; -fx-background-radius: 4px;");
 
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setHgrow(Priority.NEVER);
@@ -89,36 +90,59 @@ public class MainWindow {
         int row = 0;
 
         // 甲方爸爸名称
-        grid.add(new Label("甲方爸爸名称："), 0, row);
+        Label clientLabel = new Label("客户名称：");
+        clientLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
+        grid.add(clientLabel, 0, row);
         clientNameField = new TextField();
-        clientNameField.setPromptText("填写甲方公司名称，显示在报告顶部、声明及文件名等位置");
+        clientNameField.setPromptText("填写客户公司名称，显示在报告顶部、声明及文件名等位置");
+        clientNameField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
         grid.add(clientNameField, 1, row++);
 
         // 是否初测
-        Label testTypeLabel = new Label("是否初测：");
+        Label testTypeLabel = new Label("测试类型：");
+        testTypeLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
         ToggleGroup testTypeGroup = new ToggleGroup();
         rbInitialTest = new RadioButton("初测");
         rbRetestTest = new RadioButton("复测");
         rbInitialTest.setToggleGroup(testTypeGroup);
         rbRetestTest.setToggleGroup(testTypeGroup);
         rbInitialTest.setSelected(true);
-        HBox testBox = new HBox(10, rbInitialTest, rbRetestTest);
+
+        // RadioButton样式
+        String radioStyle = "-fx-font-size: 11px; -fx-text-fill: #2d3436; -fx-cursor: hand; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
+        rbInitialTest.setStyle(radioStyle);
+        rbRetestTest.setStyle(radioStyle);
+
+        HBox testBox = new HBox(7, rbInitialTest, rbRetestTest);
+        testBox.setAlignment(Pos.CENTER_LEFT);
         grid.addRow(row++, testTypeLabel, testBox);
 
         // 乙方公司名称
-        grid.add(new Label("乙方公司名称："), 0, row);
+        Label contractorLabel = new Label("检测机构：");
+        contractorLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
+        grid.add(contractorLabel, 0, row);
         contractorNameField = new TextField();
-        contractorNameField.setPromptText("填写乙方公司名称，显示在署名、声明等位置");
+        contractorNameField.setPromptText("填写检测机构名称，显示在署名、声明等位置");
+        contractorNameField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
         grid.add(contractorNameField, 1, row++);
 
+        // 创建通用样式
+        String labelStyle = "-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #2d3436;";
+        String fieldStyle = "-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;";
+
         // 渗透测试日期
-        grid.add(new Label("渗透测试日期："), 0, row);
+        Label testDateLabel = new Label("测试时间：");
+        testDateLabel.setStyle(labelStyle);
+        grid.add(testDateLabel, 0, row);
         testDateField = new TextField();
-        testDateField.setPromptText("填写渗透测试日期：于{此处填写}对XX客户进行了渗透测试");
+        testDateField.setPromptText("填写渗透测试时间：于{此处填写}对XX客户进行了渗透测试");
+        testDateField.setStyle(fieldStyle);
         grid.add(testDateField, 1, row++);
 
         // 报告时间
-        grid.add(new Label("报告编写日期："), 0, row);
+        Label reportDateLabel = new Label("报告日期：");
+        reportDateLabel.setStyle(labelStyle);
+        grid.add(reportDateLabel, 0, row);
         LocalDate today = LocalDate.now();
         reportYearField = new TextField(String.valueOf(today.getYear()));
         reportYearField.setPromptText("年");
@@ -126,51 +150,118 @@ public class MainWindow {
         reportMonthField.setPromptText("月");
         reportDayField = new TextField(String.format("%02d", today.getDayOfMonth()));
         reportDayField.setPromptText("日");
-        HBox reportDateBox = new HBox(5, reportYearField, reportMonthField, reportDayField);
+
+        // 为日期字段设置样式
+        String dateFieldStyle = "-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white; -fx-pref-width: 60px;";
+        reportYearField.setStyle(dateFieldStyle);
+        reportMonthField.setStyle(dateFieldStyle);
+        reportDayField.setStyle(dateFieldStyle);
+
+        HBox reportDateBox = new HBox(4, reportYearField, reportMonthField, reportDayField);
+        reportDateBox.setAlignment(Pos.CENTER_LEFT);
         grid.add(reportDateBox, 1, row++);
 
         // 报告编写人员
-        grid.add(new Label("报告编写人员："), 0, row);
+        Label reportAuthorLabel = new Label("报告作者：");
+        reportAuthorLabel.setStyle(labelStyle);
+        grid.add(reportAuthorLabel, 0, row);
         reportAuthorField = new TextField();
         reportAuthorField.setPromptText("填写报告编写人员");
+        reportAuthorField.setStyle(fieldStyle);
         grid.add(reportAuthorField, 1, row++);
 
         // 渗透测试人员
-        grid.add(new Label("渗透测试人员："), 0, row);
+        Label testerLabel = new Label("测试人员：");
+        testerLabel.setStyle(labelStyle);
+        grid.add(testerLabel, 0, row);
         testerField = new TextField();
         testerField.setPromptText("填写渗透测试人员");
+        testerField.setStyle(fieldStyle);
         grid.add(testerField, 1, row++);
 
         // 项目经理
-        grid.add(new Label("项目经理："), 0, row);
+        Label managerLabel = new Label("项目经理：");
+        managerLabel.setStyle(labelStyle);
+        grid.add(managerLabel, 0, row);
         managerField = new TextField();
         managerField.setPromptText("填写项目经理");
+        managerField.setStyle(fieldStyle);
         grid.add(managerField, 1, row++);
 
         // 漏洞数量
-        Label vulnLabel = new Label("漏洞数量：");
+        Label vulnLabel = new Label("漏洞统计：");
+        vulnLabel.setStyle(labelStyle);
+
+        // 漏洞数量字段样式
+        String vulnFieldStyle = "-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white; -fx-pref-width: 60px; -fx-alignment: center;";
+
         highVulnField = new TextField();
-        highVulnField.setPromptText("高");
+        highVulnField.setPromptText("高危");
+        highVulnField.setStyle(vulnFieldStyle + " -fx-border-color: #ff6b6b;");
+
         midVulnField = new TextField();
-        midVulnField.setPromptText("中");
+        midVulnField.setPromptText("中危");
+        midVulnField.setStyle(vulnFieldStyle + " -fx-border-color: #feca57;");
+
         lowVulnField = new TextField();
-        lowVulnField.setPromptText("低");
+        lowVulnField.setPromptText("低危");
+        lowVulnField.setStyle(vulnFieldStyle + " -fx-border-color: #48dbfb;");
+
         totalVulnField = new TextField();
-        totalVulnField.setPromptText("总数");
+        totalVulnField.setPromptText("总计");
         totalVulnField.setEditable(false);
+        totalVulnField.setStyle(vulnFieldStyle + " -fx-border-color: #1dd1a1; -fx-background-color: #f0fff4; -fx-font-weight: 600;");
         totalVulnField.textProperty().bind(Bindings.createStringBinding(() -> {
             int high = parseIntOrZero(highVulnField.getText());
             int mid = parseIntOrZero(midVulnField.getText());
             int low = parseIntOrZero(lowVulnField.getText());
             return String.valueOf(high + mid + low);
         }, highVulnField.textProperty(), midVulnField.textProperty(), lowVulnField.textProperty()));
-        HBox vulnBox = new HBox(10, highVulnField, midVulnField, lowVulnField, totalVulnField);
+
+        // 添加标签说明
+        Label highLabel = new Label("高危");
+        highLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #ff6b6b; -fx-font-weight: 600;");
+        Label midLabel = new Label("中危");
+        midLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #feca57; -fx-font-weight: 600;");
+        Label lowLabel = new Label("低危");
+        lowLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #48dbfb; -fx-font-weight: 600;");
+        Label totalLabel = new Label("总计");
+        totalLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #1dd1a1; -fx-font-weight: 600;");
+
+        VBox vulnInputBox = new VBox(2, highVulnField, highLabel);
+        VBox vulnInputBox2 = new VBox(2, midVulnField, midLabel);
+        VBox vulnInputBox3 = new VBox(2, lowVulnField, lowLabel);
+        VBox vulnInputBox4 = new VBox(2, totalVulnField, totalLabel);
+
+        HBox vulnBox = new HBox(6, vulnInputBox, vulnInputBox2, vulnInputBox3, vulnInputBox4);
+        vulnBox.setAlignment(Pos.CENTER_LEFT);
         grid.addRow(row++, vulnLabel, vulnBox);
 
         // ====================================底部按钮=====================================
+        // 按钮样式定义
+        String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 3, 0, 0, 1);";
+        String primaryBtnHover = "-fx-background-color: #3651de; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.4), 4, 0, 0, 1);";
+
+        String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.2), 3, 0, 0, 1);";
+        String successBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.4), 4, 0, 0, 1);";
+
+        String secondaryBtnStyle = "-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.2), 3, 0, 0, 1);";
+        String secondaryBtnHover = "-fx-background-color: #5ba3f5; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.4), 4, 0, 0, 1);";
+
         Button addVulnBtn = new Button("录入漏洞");
+        addVulnBtn.setStyle(primaryBtnStyle);
+        addVulnBtn.setOnMouseEntered(e -> addVulnBtn.setStyle(primaryBtnHover));
+        addVulnBtn.setOnMouseExited(e -> addVulnBtn.setStyle(primaryBtnStyle));
+
         Button generateReportBtn = new Button("生成报告");
+        generateReportBtn.setStyle(successBtnStyle);
+        generateReportBtn.setOnMouseEntered(e -> generateReportBtn.setStyle(successBtnHover));
+        generateReportBtn.setOnMouseExited(e -> generateReportBtn.setStyle(successBtnStyle));
+
         Button openVulnEditorBtn = new Button("漏洞库编辑器");
+        openVulnEditorBtn.setStyle(secondaryBtnStyle);
+        openVulnEditorBtn.setOnMouseEntered(e -> openVulnEditorBtn.setStyle(secondaryBtnHover));
+        openVulnEditorBtn.setOnMouseExited(e -> openVulnEditorBtn.setStyle(secondaryBtnStyle));
         // 居中逻辑在最底部
         // ================================================================================
 
@@ -382,17 +473,20 @@ public class MainWindow {
 
         // =================================== 自适应 + 滚动封装 ====================================
 
-        mainVBox = new VBox(10);  // 间距10
-        mainVBox.setPadding(new Insets(20));
+        mainVBox = new VBox(8);  // 间距8
+        mainVBox.setPadding(new Insets(12));
+        mainVBox.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 6px;");
         // 先初始化模板UI控件
         initTemplateUI();
         // 再把 grid 加进 mainVBox
         mainVBox.getChildren().add(grid);
 
         // =====================================底部按钮容器（用于居中）==================================
-        HBox buttonsHBox = new HBox(20, openVulnEditorBtn, addVulnBtn, generateReportBtn);
+        HBox buttonsHBox = new HBox(10, openVulnEditorBtn, addVulnBtn, generateReportBtn);
         buttonsHBox.setAlignment(Pos.CENTER);
         buttonsHBox.setMaxWidth(Double.MAX_VALUE);
+        buttonsHBox.setPadding(new Insets(10, 0, 6, 0));
+        buttonsHBox.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
         // 将按钮容器放到底部，整个宽度撑满，按钮居中
         mainVBox.getChildren().add(buttonsHBox);
         // ================================================================================
@@ -400,7 +494,8 @@ public class MainWindow {
         scrollPane = new ScrollPane(mainVBox);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
-        scrollPane.setPadding(new Insets(10));
+        scrollPane.setPadding(new Insets(6));
+        scrollPane.setStyle("-fx-background-color: #f5f7fa; -fx-border-color: transparent; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
     }
 
     /**
@@ -490,23 +585,60 @@ public class MainWindow {
      * 初始化模板UI
      */
     private void initTemplateUI() {
-        HBox templateBox = new HBox(10);
+        // 模板区域标题
+        Label templateTitle = new Label("报告模板管理");
+        templateTitle.setStyle("-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
+
+        HBox templateBox = new HBox(8);
         templateBox.setAlignment(Pos.CENTER);
+        templateBox.setPadding(new Insets(6, 0, 5, 0));
+        templateBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 5px; -fx-background-radius: 5px; -fx-padding: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        Label templateLabel = new Label("选择模板：");
+        templateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
         templateComboBox = new ComboBox<>();
-        templateComboBox.setPromptText("选择甲方模板");
+        templateComboBox.setPromptText("选择客户模板");
+        templateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
+
+        Label nameLabel = new Label("模板名称：");
+        nameLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
         templateNameField = new TextField();
-        templateNameField.setPromptText("模板名");
+        templateNameField.setPromptText("输入模板名称");
+        templateNameField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
 
-        saveTemplateButton = new Button("保存到模板");
+        // 模板按钮样式
+        String saveBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.2), 2, 0, 0, 1);";
+        String saveBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.4), 3, 0, 0, 1);";
+
+        String deleteBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.2), 2, 0, 0, 1);";
+        String deleteBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.4), 3, 0, 0, 1);";
+
+        saveTemplateButton = new Button("保存模板");
+        saveTemplateButton.setStyle(saveBtnStyle);
+        saveTemplateButton.setOnMouseEntered(e -> saveTemplateButton.setStyle(saveBtnHover));
+        saveTemplateButton.setOnMouseExited(e -> saveTemplateButton.setStyle(saveBtnStyle));
 
         deleteTemplateButton = new Button("删除模板");
+        deleteTemplateButton.setStyle(deleteBtnStyle);
         deleteTemplateButton.setDisable(true); // 默认禁用，没选中模板时不可用
+        deleteTemplateButton.setOnMouseEntered(e -> {
+            if (!deleteTemplateButton.isDisabled()) {
+                deleteTemplateButton.setStyle(deleteBtnHover);
+            }
+        });
+        deleteTemplateButton.setOnMouseExited(e -> {
+            if (!deleteTemplateButton.isDisabled()) {
+                deleteTemplateButton.setStyle(deleteBtnStyle);
+            }
+        });
 
-        templateBox.getChildren().addAll(new Label("模板:"), templateComboBox,
-                deleteTemplateButton,
-                new Label("模板名:"), templateNameField, saveTemplateButton);
+        templateBox.getChildren().addAll(templateLabel, templateComboBox, nameLabel, templateNameField, saveTemplateButton, deleteTemplateButton);
+
+        // 将模板标题和容器添加到主界面
+        VBox templateContainer = new VBox(6, templateTitle, templateBox);
+        mainVBox.getChildren().add(0, templateContainer);
 
         // 加载模板列表
         loadTemplateList();
@@ -563,8 +695,7 @@ public class MainWindow {
             });
         });
 
-        // 将 templateBox 加到主界面最上方
-        mainVBox.getChildren().add(0, templateBox);
+        // 模板UI已在上面添加到主界面
     }
 
     /**
