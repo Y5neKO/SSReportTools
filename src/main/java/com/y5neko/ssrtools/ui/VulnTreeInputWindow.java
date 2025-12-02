@@ -410,9 +410,9 @@ public class VulnTreeInputWindow {
      * @return 漏洞行
      */
     private HBox createVulnRow(VBox vulnsBox, boolean[] isLoadingRef) {
-        HBox vulnRow = new HBox(8);
-        vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-        vulnRow.setAlignment(Pos.CENTER);
+        HBox vulnRow = new HBox(6);
+        vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 10px 6px 10px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        vulnRow.setAlignment(Pos.CENTER_LEFT); // 改为左对齐，适应不同高度的组件
         vulnRow.setFocusTraversable(false); // 禁用焦点，避免蓝色边框
 
         // 漏洞名称输入框（支持自动完成）
@@ -421,14 +421,22 @@ public class VulnTreeInputWindow {
         name.setTooltip(new Tooltip("必填，输入可匹配漏洞库"));
 
         // 其他字段
-        TextField desc = new TextField();
+        TextArea desc = new TextArea();
         desc.setPromptText("描述");
+        desc.setPrefHeight(50); // 固定高度，约等于2行文本
+        desc.setMaxHeight(50); // 禁止自动调整高度
+        desc.setMinHeight(50); // 强制固定高度
+        desc.setWrapText(true); // 自动换行
 
         TextField level = new TextField();
         level.setPromptText("等级");
 
-        TextField harm = new TextField();
+        TextArea harm = new TextArea();
         harm.setPromptText("危害");
+        harm.setPrefHeight(50); // 固定高度，约等于2行文本
+        harm.setMaxHeight(50); // 禁止自动调整高度
+        harm.setMinHeight(50); // 强制固定高度
+        harm.setWrapText(true); // 自动换行
 
         // 修复建议字段 - 固定高度多行文本框，带滚动条
         TextArea fix = new TextArea();
@@ -442,40 +450,10 @@ public class VulnTreeInputWindow {
         // 禁用自动高度调整，保持固定高度
         fix.setScrollTop(0); // 初始滚动到顶部
 
-        // 添加内容变化监听，确保滚动条在需要时出现
-        fix.textProperty().addListener((observable, oldValue, newValue) -> {
-            // 当内容变化时，如果有很多行，自动滚动到底部（可选功能）
-            if (newValue != null && newValue.split("\n").length > 3) {
-                javafx.application.Platform.runLater(() -> {
-                    fix.setScrollTop(Double.MAX_VALUE); // 滚动到底部
-                });
-            }
-        });
-
-        // 简单的tooltip显示完整内容
-        fix.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) { // 失去焦点时
-                String text = fix.getText();
-                if (!text.trim().isEmpty() && text.length() > 50) {
-                    fix.setTooltip(new Tooltip("完整内容：\n" + text));
-                } else {
-                    fix.setTooltip(null);
-                }
-            }
-        });
-
-        // 支持Ctrl+Home/Ctrl+End键快速导航
-        fix.setOnKeyPressed(e -> {
-            if (e.isControlDown()) {
-                if (e.getCode() == KeyCode.HOME) {
-                    fix.setScrollTop(0);
-                    e.consume();
-                } else if (e.getCode() == KeyCode.END) {
-                    fix.setScrollTop(Double.MAX_VALUE);
-                    e.consume();
-                }
-            }
-        });
+        // 为所有TextArea添加统一的交互功能
+        setupTextAreaInteractions(fix, 3);
+        setupTextAreaInteractions(desc, 2);
+        setupTextAreaInteractions(harm, 2);
 
         TextField repaired = new TextField();
         repaired.setPromptText("是否修复");
@@ -483,11 +461,14 @@ public class VulnTreeInputWindow {
         // 简洁统一输入框样式
         String fieldStyle = "-fx-font-size: 12px; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 3px; -fx-padding: 5px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
 
+        // TextArea样式
+        String areaStyle = "-fx-font-size: 12px; -fx-background-color: #fafbfc; -fx-border-color: #e9ecef; -fx-border-radius: 3px; -fx-padding: 4px; -fx-wrap-text: true; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
+
         // 应用统一样式
         name.setStyle(fieldStyle);
-        desc.setStyle(fieldStyle);
+        desc.setStyle(areaStyle);
         level.setStyle(fieldStyle);
-        harm.setStyle(fieldStyle);
+        harm.setStyle(areaStyle);
         repaired.setStyle(fieldStyle);
 
         // 为所有输入框添加焦点控制，防止父容器出现蓝色边框
@@ -621,20 +602,72 @@ public class VulnTreeInputWindow {
         vulnRow.getChildren().addAll(name, desc, level, harm, fix, repaired, delVulnBtn);
 
         // 优化布局权重，确保字段合理分配空间
-        HBox.setHgrow(name, Priority.SOMETIMES);
-        HBox.setHgrow(desc, Priority.SOMETIMES);
-        HBox.setHgrow(level, Priority.NEVER);
-        HBox.setHgrow(harm, Priority.SOMETIMES);
-        HBox.setHgrow(fix, Priority.SOMETIMES);
-        HBox.setHgrow(repaired, Priority.NEVER);
+        HBox.setHgrow(name, Priority.NEVER); // 漏洞名称固定宽度
+        HBox.setHgrow(desc, Priority.SOMETIMES); // 描述可扩展
+        HBox.setHgrow(level, Priority.NEVER); // 等级固定宽度
+        HBox.setHgrow(harm, Priority.SOMETIMES); // 危害可扩展
+        HBox.setHgrow(fix, Priority.ALWAYS); // 修复建议最大权重
+        HBox.setHgrow(repaired, Priority.NEVER); // 修复状态固定宽度
         HBox.setHgrow(delVulnBtn, Priority.NEVER);
 
-        // 确保修复建议字段有合适的宽度
+        // 设置各字段的合适宽度
+        name.setPrefWidth(120);
+        name.setMaxWidth(150);
+        level.setPrefWidth(60);
+        level.setMaxWidth(80);
+        repaired.setPrefWidth(70);
+        repaired.setMaxWidth(90);
+        desc.setMinWidth(100);
+        desc.setPrefWidth(140);
+        harm.setMinWidth(100);
+        harm.setPrefWidth(140);
         fix.setMinWidth(150);
         delVulnBtn.setMaxWidth(30);
         delVulnBtn.setMinWidth(30);
 
         return vulnRow;
+    }
+
+    /**
+     * 为TextArea设置统一的交互功能
+     * @param textArea 文本区域
+     * @param maxVisibleLines 最大可见行数
+     */
+    private void setupTextAreaInteractions(TextArea textArea, int maxVisibleLines) {
+        // 添加内容变化监听，确保滚动条在需要时出现
+        textArea.textProperty().addListener((observable, oldValue, newValue) -> {
+            // 当内容变化时，如果有很多行，自动滚动到底部（可选功能）
+            if (newValue != null && newValue.split("\n").length > maxVisibleLines) {
+                javafx.application.Platform.runLater(() -> {
+                    textArea.setScrollTop(Double.MAX_VALUE); // 滚动到底部
+                });
+            }
+        });
+
+        // 简单的tooltip显示完整内容
+        textArea.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) { // 失去焦点时
+                String text = textArea.getText();
+                if (!text.trim().isEmpty() && text.length() > 30) {
+                    textArea.setTooltip(new Tooltip("完整内容：\n" + text));
+                } else {
+                    textArea.setTooltip(null);
+                }
+            }
+        });
+
+        // 支持Ctrl+Home/Ctrl+End键快速导航
+        textArea.setOnKeyPressed(e -> {
+            if (e.isControlDown()) {
+                if (e.getCode() == KeyCode.HOME) {
+                    textArea.setScrollTop(0);
+                    e.consume();
+                } else if (e.getCode() == KeyCode.END) {
+                    textArea.setScrollTop(Double.MAX_VALUE);
+                    e.consume();
+                }
+            }
+        });
     }
 
     /**
@@ -718,12 +751,12 @@ public class VulnTreeInputWindow {
                         Node n = vulnRow.getChildren().get(i);
                         if (i == 0 && n instanceof TextField) {
                             vulnName = ((TextField) n).getText().trim();
-                        } else if (i == 1 && n instanceof TextField) {
-                            vulnDesc = ((TextField) n).getText();
+                        } else if (i == 1 && n instanceof TextArea) {
+                            vulnDesc = ((TextArea) n).getText(); // TextArea内容，保持换行符
                         } else if (i == 2 && n instanceof TextField) {
                             vulnLevel = ((TextField) n).getText();
-                        } else if (i == 3 && n instanceof TextField) {
-                            vulnHarm = ((TextField) n).getText();
+                        } else if (i == 3 && n instanceof TextArea) {
+                            vulnHarm = ((TextArea) n).getText(); // TextArea内容，保持换行符
                         } else if (i == 4 && n instanceof TextArea) {
                             vulnFix = ((TextArea) n).getText(); // 直接获取TextArea内容，保持换行符
                         } else if (i == 5 && n instanceof TextField) {
@@ -815,9 +848,15 @@ public class VulnTreeInputWindow {
 
                         ((TextField) vulnRow.getChildren().get(0)).setText(vuln.name);
 
-                        ((TextField) vulnRow.getChildren().get(1)).setText(vuln.desc);
+                        // 处理描述的TextArea，确保换行符正确加载
+                        TextArea descField = (TextArea) vulnRow.getChildren().get(1);
+                        descField.setText(vuln.desc); // 直接设置完整内容，包含换行符
+
                         ((TextField) vulnRow.getChildren().get(2)).setText(vuln.level);
-                        ((TextField) vulnRow.getChildren().get(3)).setText(vuln.harm);
+
+                        // 处理危害的TextArea，确保换行符正确加载
+                        TextArea harmField = (TextArea) vulnRow.getChildren().get(3);
+                        harmField.setText(vuln.harm); // 直接设置完整内容，包含换行符
 
                         // 处理修复建议的TextArea，确保换行符正确加载
                         TextArea fixField = (TextArea) vulnRow.getChildren().get(4);

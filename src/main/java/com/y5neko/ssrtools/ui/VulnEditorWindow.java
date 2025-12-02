@@ -7,6 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -39,7 +40,7 @@ public class VulnEditorWindow {
 
     private TextField filterField;
     private TextField nameField;
-    private TextField harmField;
+    private TextArea harmArea;
     private TextField riskField;
     private TextArea descArea;
     private TextArea suggestArea;
@@ -66,7 +67,9 @@ public class VulnEditorWindow {
         stage.setTitle("漏洞库编辑器");
         BorderPane root = layoutUI();
         bindEvents(stage);
-        stage.setScene(new Scene(root, 1000, 600));
+        stage.setScene(new Scene(root, 1200, 700));
+        stage.setMinWidth(1100);
+        stage.setMinHeight(650);
         stage.show();
         loadDefaultVulnerabilities();
     }
@@ -77,19 +80,32 @@ public class VulnEditorWindow {
     private void initControls() {
         filterField = new TextField();
         filterField.setPromptText("根据漏洞名称过滤...");
+        filterField.setStyle("-fx-font-size: 14px; -fx-padding: 8px 12px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         table = new TableView<>();
         table.setPlaceholder(new Label("暂无漏洞"));
+        table.setStyle("-fx-background-color: white; -fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         nameField = new TextField();
-        harmField = new TextField();
+        nameField.setStyle("-fx-font-size: 13px; -fx-padding: 8px 10px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        harmArea = new TextArea();
+        harmArea.setPrefRowCount(3);
+        harmArea.setWrapText(true);
+        harmArea.setStyle("-fx-font-size: 13px; -fx-padding: 8px 10px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
         riskField = new TextField();
+        riskField.setStyle("-fx-font-size: 13px; -fx-padding: 8px 10px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
         descArea = new TextArea();
-        descArea.setPrefRowCount(6);
+        descArea.setPrefRowCount(3);
         descArea.setWrapText(true);
+        descArea.setStyle("-fx-font-size: 13px; -fx-padding: 8px 10px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
         suggestArea = new TextArea();
-        suggestArea.setPrefRowCount(6);
+        suggestArea.setPrefRowCount(3);
         suggestArea.setWrapText(true);
+        suggestArea.setStyle("-fx-font-size: 13px; -fx-padding: 8px 10px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         btnNew = new Button("新增漏洞");
         btnSave = new Button("保存到列表");
@@ -97,6 +113,54 @@ public class VulnEditorWindow {
         btnLoad = new Button("加载 YAML");
         btnOverwrite = new Button("保存 YAML");
         btnExport = new Button("另存为 YAML");
+
+        // 应用按钮样式
+        applyButtonStyles();
+    }
+
+    /**
+     * 应用按钮样式
+     */
+    private void applyButtonStyles() {
+        // 主要按钮样式 - 减小padding和字体大小
+        String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 4, 0, 0, 1);";
+        String primaryBtnHover = "-fx-background-color: #3651de; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.4), 6, 0, 0, 2);";
+
+        // 成功按钮样式
+        String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.2), 4, 0, 0, 1);";
+        String successBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.4), 6, 0, 0, 2);";
+
+        // 危险按钮样式
+        String dangerBtnStyle = "-fx-background-color: #f53e57; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(245, 62, 87, 0.2), 4, 0, 0, 1);";
+        String dangerBtnHover = "-fx-background-color: #d32f2f; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(245, 62, 87, 0.4), 6, 0, 0, 2);";
+
+        // 次要按钮样式
+        String secondaryBtnStyle = "-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.2), 4, 0, 0, 1);";
+        String secondaryBtnHover = "-fx-background-color: #5ba3f5; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.4), 6, 0, 0, 2);";
+
+        // 应用到按钮
+        btnNew.setStyle(primaryBtnStyle);
+        btnSave.setStyle(successBtnStyle);
+        btnDelete.setStyle(dangerBtnStyle);
+        btnLoad.setStyle(secondaryBtnStyle);
+        btnOverwrite.setStyle(successBtnStyle);
+        btnExport.setStyle(secondaryBtnStyle);
+
+        // 添加悬停效果
+        addHoverEffect(btnNew, primaryBtnStyle, primaryBtnHover);
+        addHoverEffect(btnSave, successBtnStyle, successBtnHover);
+        addHoverEffect(btnDelete, dangerBtnStyle, dangerBtnHover);
+        addHoverEffect(btnLoad, secondaryBtnStyle, secondaryBtnHover);
+        addHoverEffect(btnOverwrite, successBtnStyle, successBtnHover);
+        addHoverEffect(btnExport, secondaryBtnStyle, secondaryBtnHover);
+    }
+
+    /**
+     * 为按钮添加悬停效果
+     */
+    private void addHoverEffect(Button button, String normalStyle, String hoverStyle) {
+        button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
+        button.setOnMouseExited(e -> button.setStyle(normalStyle));
     }
 
     /**
@@ -104,53 +168,129 @@ public class VulnEditorWindow {
      * @return 根节点
      */
     private BorderPane layoutUI() {
-        // 表格列配置
+        // 表格列配置 - 优化宽度分配
         TableColumn<Vulnerability, String> nameCol = new TableColumn<>("漏洞名称");
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        nameCol.setPrefWidth(100);
+        nameCol.setPrefWidth(180);
+        nameCol.setMinWidth(150);
+        nameCol.setMaxWidth(250);
+        nameCol.setStyle("-fx-font-size: 14px; -fx-font-weight: 600;");
+        nameCol.setResizable(true);
 
         TableColumn<Vulnerability, String> riskCol = new TableColumn<>("风险等级");
         riskCol.setCellValueFactory(new PropertyValueFactory<>("risklevel"));
-        riskCol.setPrefWidth(60);
+        riskCol.setPrefWidth(100);
+        riskCol.setMinWidth(80);
+        riskCol.setMaxWidth(120);
+        riskCol.setStyle("-fx-font-size: 14px; -fx-font-weight: 600;");
+        riskCol.setResizable(true);
 
         TableColumn<Vulnerability, String> harmCol = new TableColumn<>("漏洞危害");
         harmCol.setCellValueFactory(cell -> {
             String v = cell.getValue().getHarm();
             if (v == null) v = "";
-            String preview = v.length() > 40 ? v.substring(0, 37) + "..." : v;
+            // 将多行文本转换为单行显示，替换换行符为空格
+            String singleLine = v.replace("\n", " ").replace("\r", " ").trim();
+            // 清理多余空格
+            singleLine = singleLine.replaceAll("\\s+", " ");
+            // 增加显示长度限制，因为现在有更多空间
+            String preview = singleLine.length() > 80 ? singleLine.substring(0, 77) + "..." : singleLine;
             return new SimpleStringProperty(preview);
         });
         harmCol.setPrefWidth(350);
+        harmCol.setMinWidth(300);
+        harmCol.setStyle("-fx-font-size: 14px; -fx-font-weight: 600;");
+        harmCol.setResizable(true);
 
         table.getColumns().setAll(nameCol, riskCol, harmCol);
+        table.setStyle("-fx-background-color: white; -fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        // 使用智能调整策略，允许列拖动调整大小
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // 用过滤列表绑定表格
         table.setItems(filteredData);
 
-        VBox tableBox = new VBox(5);
-        tableBox.setPadding(new Insets(8));
-        tableBox.getChildren().addAll(filterField, table);
+        // 创建搜索区域
+        Label searchLabel = new Label("搜索漏洞");
+        searchLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
+
+        VBox searchBox = new VBox(8);
+        searchBox.getChildren().addAll(searchLabel, filterField);
+        searchBox.setPadding(new Insets(0, 0, 12, 0));
+
+        VBox tableBox = new VBox(6);
+        tableBox.setPadding(new Insets(12));
+        tableBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8px; -fx-background-radius: 8px;");
+        tableBox.getChildren().addAll(searchBox, table);
 
         // 设置表格垂直扩展
         VBox.setVgrow(table, Priority.ALWAYS);
 
+        // 创建表单区域
+        Label formTitle = new Label("漏洞详情编辑");
+        formTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
+
+        // 创建字段标签样式
+        Label nameLabel = new Label("漏洞名称");
+        nameLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        Label harmLabel = new Label("漏洞危害");
+        harmLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        Label riskLabel = new Label("风险等级");
+        riskLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        Label descLabel = new Label("漏洞描述");
+        descLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        Label suggestLabel = new Label("修复建议");
+        suggestLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        // 创建主要操作按钮行
+        HBox primaryButtons = new HBox(8, btnNew, btnSave, btnDelete);
+        primaryButtons.setAlignment(Pos.CENTER);
+        primaryButtons.setPadding(new Insets(10, 0, 8, 0));
+        primaryButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        // 创建文件操作按钮行
+        HBox fileButtons = new HBox(8, btnLoad, btnOverwrite, btnExport);
+        fileButtons.setAlignment(Pos.CENTER);
+        fileButtons.setPadding(new Insets(0, 0, 10, 0));
+        fileButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        // 创建表单容器
         VBox form = new VBox(8);
-        form.setPadding(new Insets(8));
+        form.setPadding(new Insets(15));
+        form.setStyle("-fx-background-color: white; -fx-border-color: #dfe6e9; -fx-border-radius: 10px; -fx-background-radius: 10px;");
         form.getChildren().addAll(
-                new Label("漏洞名称"), nameField,
-                new Label("漏洞危害"), harmField,
-                new Label("风险等级"), riskField,
-                new Label("漏洞描述"), descArea,
-                new Label("建议/修复"), suggestArea
+                formTitle,
+                nameLabel, nameField,
+                harmLabel, harmArea,
+                riskLabel, riskField,
+                descLabel, descArea,
+                suggestLabel, suggestArea,
+                primaryButtons,
+                fileButtons
         );
-        HBox buttons = new HBox(8, btnNew, btnSave, btnDelete, btnLoad, btnOverwrite, btnExport);
-        form.getChildren().add(buttons);
+
+        VBox.setVgrow(harmArea, Priority.NEVER);
         VBox.setVgrow(descArea, Priority.ALWAYS);
         VBox.setVgrow(suggestArea, Priority.ALWAYS);
 
+        // 设置根容器
         BorderPane root = new BorderPane();
-        root.setCenter(tableBox);
-        root.setRight(form);
+        root.setPadding(new Insets(15));
+        root.setStyle("-fx-background-color: #f5f7fa;");
+
+        // 创建左右分割容器
+        HBox mainContent = new HBox(15);
+        mainContent.getChildren().addAll(tableBox, form);
+        HBox.setHgrow(tableBox, Priority.ALWAYS);
+        HBox.setHgrow(form, Priority.NEVER);
+        form.setPrefWidth(400); // 减小表单宽度，给表格更多空间
+        form.setMaxWidth(420);  // 限制最大宽度
+
+        root.setCenter(mainContent);
         return root;
     }
 
@@ -320,7 +460,7 @@ public class VulnEditorWindow {
         if (selected == null) return;
 
         nameField.setText(selected.getName());
-        harmField.setText(selected.getHarm());
+        harmArea.setText(selected.getHarm());
         riskField.setText(selected.getRisklevel());
         descArea.setText(selected.getDescription());
         suggestArea.setText(selected.getSuggustion());
@@ -345,7 +485,7 @@ public class VulnEditorWindow {
         if (selected == null) {
             Vulnerability v = new Vulnerability(
                     nameField.getText(),
-                    harmField.getText(),
+                    harmArea.getText(),
                     descArea.getText(),
                     riskField.getText(),
                     suggestArea.getText()
@@ -354,7 +494,7 @@ public class VulnEditorWindow {
             table.getSelectionModel().select(v);
         } else {
             selected.setName(nameField.getText());
-            selected.setHarm(harmField.getText());
+            selected.setHarm(harmArea.getText());
             selected.setRisklevel(riskField.getText());
             selected.setDescription(descArea.getText());
             selected.setSuggustion(suggestArea.getText());
