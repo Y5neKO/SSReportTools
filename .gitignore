@@ -38,3 +38,8 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### AI ###
+.spec-workflow
+.claude
+CLAUDE.md

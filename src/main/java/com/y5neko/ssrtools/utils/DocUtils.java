@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.y5neko.ssrtools.config.GlobalConfig.*;
 
@@ -20,7 +21,7 @@ public class DocUtils {
      * 统一安全替换（自动转义）
      */
     private static String safeReplace(String content, String pattern, String value) {
-        return content.replaceAll(pattern, XmlEscapeUtils.escape(value));
+        return content.replaceAll(Pattern.quote(pattern), XmlEscapeUtils.escape(value));
     }
 
     /**
@@ -28,41 +29,41 @@ public class DocUtils {
      */
     private static String processNormalTextLine(String template, String lineText) {
         return template
-                .replaceAll("\\{\\{\\{\\{\\{normal_text}}}}}", XmlEscapeUtils.escape(lineText))
-                .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
-                .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
+                .replace("{{{{{normal_text}}}}}", XmlEscapeUtils.escape(lineText))
+                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
     }
 
     public static String firstHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FIRST_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
-                .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
+                .replace("{{{{{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
     }
 
     public static String secondHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(SECOND_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
-                .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
+                .replace("{{{{{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
     }
 
     public static String thirdHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(THIRD_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
-                .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
+                .replace("{{{{{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
     }
 
     public static String fourthHeadingGen(String text) {
         String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FOURTH_LEVEL_HEADING_TEPMLATE_PATH));
         return contentTemplate
-                .replaceAll("\\{\\{\\{\\{\\{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replaceAll("\\{\\{\\{\\{\\{paraId}}}}}", MiscUtils.getParaID())
-                .replaceAll("\\{\\{\\{\\{\\{TocName}}}}}", MiscUtils.getTocName());
+                .replace("{{{{{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
     }
 
     public static String normalTextGen(String text) {
@@ -89,20 +90,20 @@ public class DocUtils {
         );
 
         return contentTemplates
-                .replaceAll("\\{\\{\\{\\{\\{customer_name}}}}}", XmlEscapeUtils.escape(docObj.getCustomerName()))
-                .replaceAll("\\{\\{\\{\\{\\{is_firsr_test}}}}}", XmlEscapeUtils.escape(docObj.getIsFirsrTest()))
-                .replaceAll("\\{\\{\\{\\{\\{signature_name}}}}}", XmlEscapeUtils.escape(docObj.getSignatureName()))
-                .replaceAll("\\{\\{\\{\\{\\{report_year}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportYear())))
-                .replaceAll("\\{\\{\\{\\{\\{report_month}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportMonth())))
-                .replaceAll("\\{\\{\\{\\{\\{report_day}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportDay())))
-                .replaceAll("\\{\\{\\{\\{\\{report_reporter}}}}}", XmlEscapeUtils.escape(docObj.getReporter()))
-                .replaceAll("\\{\\{\\{\\{\\{test_time}}}}}", XmlEscapeUtils.escape(docObj.getTestTime()))
-                .replaceAll("\\{\\{\\{\\{\\{vul_all_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulAllCount())))
-                .replaceAll("\\{\\{\\{\\{\\{vul_high_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulHighCount())))
-                .replaceAll("\\{\\{\\{\\{\\{vul_medium_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulMediumCount())))
-                .replaceAll("\\{\\{\\{\\{\\{vul_low_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulLowCount())))
-                .replaceAll("\\{\\{\\{\\{\\{pm_name}}}}}", XmlEscapeUtils.escape(docObj.getPmName()))
-                .replaceAll("\\{\\{\\{\\{\\{tester_name}}}}}", XmlEscapeUtils.escape(docObj.getTesterName()));
+                .replace("{{{{{customer_name}}}}}", XmlEscapeUtils.escape(docObj.getCustomerName()))
+                .replace("{{{{{is_firsr_test}}}}}", XmlEscapeUtils.escape(docObj.getIsFirsrTest()))
+                .replace("{{{{{signature_name}}}}}", XmlEscapeUtils.escape(docObj.getSignatureName()))
+                .replace("{{{{{report_year}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportYear())))
+                .replace("{{{{{report_month}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportMonth())))
+                .replace("{{{{{report_day}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getReportDay())))
+                .replace("{{{{{report_reporter}}}}}", XmlEscapeUtils.escape(docObj.getReporter()))
+                .replace("{{{{{test_time}}}}}", XmlEscapeUtils.escape(docObj.getTestTime()))
+                .replace("{{{{{vul_all_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulAllCount())))
+                .replace("{{{{{vul_high_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulHighCount())))
+                .replace("{{{{{vul_medium_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulMediumCount())))
+                .replace("{{{{{vul_low_count}}}}}", XmlEscapeUtils.escape(Integer.toString(docObj.getVulLowCount())))
+                .replace("{{{{{pm_name}}}}}", XmlEscapeUtils.escape(docObj.getPmName()))
+                .replace("{{{{{tester_name}}}}}", XmlEscapeUtils.escape(docObj.getTesterName()));
     }
 
     public static String mainContentGen(ReportData reportData, DocObj docObj) {

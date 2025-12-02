@@ -357,7 +357,7 @@ public class MainWindow {
 
             // ===========================最终生成漏洞内容============================================
             String mainContent = DocUtils.mainContentGen(reportData, docObj);
-            String finalContent = docContent.replaceAll("\\{\\{\\{\\{\\{MainContent}}}}}", mainContent);
+            String finalContent = docContent.replace("{{{{{MainContent}}}}}", mainContent);
             try {
                 String reportFilePath = DocUtils.docGen(null, finalContent, docObj);
                 // 弹窗提示生成成功并显示路径，带打开按钮

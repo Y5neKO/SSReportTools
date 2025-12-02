@@ -149,14 +149,22 @@ public class VulnTreeInputWindow {
         titleBox.getChildren().addAll(unitLabel, unitName, delUnitBtn);
 
         VBox systemsBox = new VBox(10);
+
+        unitBox.getChildren().addAll(titleBox, systemsBox);
+
+        // 创建添加系统按钮容器
+        HBox addSystemBtnContainer = new HBox();
+        addSystemBtnContainer.setAlignment(Pos.CENTER);
         Button addSystemBtn = new Button("+ 添加系统");
         addSystemBtn.setStyle("-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 8px 16px;");
         addSystemBtn.setOnAction(e -> {
             VBox systemBox = createSystemBlock(systemsBox);
             systemsBox.getChildren().add(systemBox);
         });
+        addSystemBtnContainer.getChildren().add(addSystemBtn);
 
-        unitBox.getChildren().addAll(titleBox, addSystemBtn, systemsBox);
+        // 将添加系统按钮添加到单位块底部
+        unitBox.getChildren().add(addSystemBtnContainer);
         return unitBox;
     }
 
@@ -188,14 +196,23 @@ public class VulnTreeInputWindow {
         titleBox.getChildren().addAll(systemLabel, systemName, delSystemBtn);
 
         VBox vulnsBox = new VBox(8);
+
+        systemBox.getChildren().addAll(titleBox, vulnsBox);
+
+        // 创建添加漏洞按钮容器
+        HBox addVulnBtnContainer = new HBox();
+        addVulnBtnContainer.setAlignment(Pos.CENTER);
+        addVulnBtnContainer.setPadding(new Insets(5, 0, 0, 0)); // 添加一些顶部间距
         Button addVulnBtn = new Button("+ 添加漏洞");
         addVulnBtn.setStyle("-fx-background-color: #a29bfe; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 14px; -fx-font-size: 13px;");
         addVulnBtn.setOnAction(e -> {
             HBox vulnRow = createVulnRow(vulnsBox);
             vulnsBox.getChildren().add(vulnRow);
         });
+        addVulnBtnContainer.getChildren().add(addVulnBtn);
 
-        systemBox.getChildren().addAll(titleBox, addVulnBtn, vulnsBox);
+        // 将添加漏洞按钮添加到系统块底部
+        systemBox.getChildren().add(addVulnBtnContainer);
         return systemBox;
     }
 
@@ -441,7 +458,7 @@ public class VulnTreeInputWindow {
 
             Set<String> systemNameSet = new HashSet<>();
 
-            VBox systemsBox = (VBox) unitBox.getChildren().get(2);
+            VBox systemsBox = (VBox) unitBox.getChildren().get(1);
             for (Node sNode : systemsBox.getChildren()) {
                 if (!(sNode instanceof VBox)) continue;
                 VBox systemBox = (VBox) sNode;
@@ -468,7 +485,7 @@ public class VulnTreeInputWindow {
                 system.system = systemName;
                 system.vulns = new ArrayList<>();
 
-                VBox vulnsBox = (VBox) systemBox.getChildren().get(2);
+                VBox vulnsBox = (VBox) systemBox.getChildren().get(1);
                 for (Node vNode : vulnsBox.getChildren()) {
                     if (!(vNode instanceof HBox)) continue;
                     HBox vulnRow = (HBox) vNode;
@@ -562,14 +579,14 @@ public class VulnTreeInputWindow {
                 VBox unitBox = createUnitBlock(container);
                 HBox unitTitleBox = (HBox) unitBox.getChildren().get(0);
                 TextField unitField = (TextField) unitTitleBox.getChildren().get(1);
-                VBox systemsBox = (VBox) unitBox.getChildren().get(2);
+                VBox systemsBox = (VBox) unitBox.getChildren().get(1);
 
                 unitField.setText(unit.unit);
                 for (SystemEntry sys : unit.systems) {
                     VBox sysBox = createSystemBlock(systemsBox);
                     HBox sysTitleBox = (HBox) sysBox.getChildren().get(0);
                     TextField sysField = (TextField) sysTitleBox.getChildren().get(1);
-                    VBox vulnsBox = (VBox) sysBox.getChildren().get(2);
+                    VBox vulnsBox = (VBox) sysBox.getChildren().get(1);
 
                     sysField.setText(sys.system);
                     for (Vuln vuln : sys.vulns) {
