@@ -21,6 +21,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.scenicview.ScenicView;
+
 import java.util.function.Consumer;
 
 import java.io.*;
@@ -55,29 +57,87 @@ public class VulnTreeInputWindow {
 
         Stage stage = new Stage();
         stage.setTitle("漏洞录入");
+        // 注释掉图标加载，避免文件不存在的错误
+        // stage.getIcons().add(new javafx.scene.image.Image("/icon.png"));
 
-        // 美化整体样式
+        // 简洁纯色背景
         root.setStyle("-fx-background-color: #f5f6fa;");
-        root.setPadding(new Insets(20));
+        root.setPadding(new Insets(25));
 
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-border-color: #e9ecef;");
+        scrollPane.setStyle("-fx-background: transparent; -fx-border-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        VBox container = new VBox(15);
-        container.setPadding(new Insets(10));
+        // 注释掉动态滚动条样式设置，避免NullPointerException
+        // 滚动条样式可以通过CSS文件设置，或者保持默认样式
+        /*
+        scrollPane.lookup(".scroll-bar").setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-background-insets: 0;" +
+            "-fx-padding: 0;"
+        );
+        scrollPane.lookup(".scroll-bar:vertical").setStyle(
+            "-fx-background-color: rgba(255,255,255,0.2);" +
+            "-fx-background-insets: 0;" +
+            "-fx-pref-width: 8px;" +
+            "-fx-border-radius: 4px;"
+        );
+        scrollPane.lookup(".scroll-bar:vertical .thumb").setStyle(
+            "-fx-background-color: rgba(255,255,255,0.6);" +
+            "-fx-background-insets: 2px;" +
+            "-fx-border-radius: 3px;"
+        );
+        */
+
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(20));
+        container.setStyle("-fx-background-color: transparent; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-focus-traversable: false;");
+        container.setFocusTraversable(false); // 禁用焦点，避免蓝色边框
+
+        // 强制禁用容器内所有子容器的焦点效果
+        container.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                container.setStyle("-fx-background-color: transparent; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-focus-traversable: false;");
+                container.setFocusTraversable(false);
+                // 递归禁用所有子容器的焦点
+                disableFocusForChildren(container);
+            }
+        });
         scrollPane.setContent(container);
 
-        // 美化按钮样式
-        String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
-        String dangerBtnStyle = "-fx-background-color: #f53e57; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
-        String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 6px; -fx-padding: 8px 16px;";
+        // 增强反馈感按钮样式
+        String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.3), 6, 0, 0, 2);";
+        String dangerBtnStyle = "-fx-background-color: #f53e57; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(245, 62, 87, 0.3), 6, 0, 0, 2);";
+        String successBtnStyle = "-fx-background-color: #26de81; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.3), 6, 0, 0, 2);";
 
-        Button addUnitBtn = new Button("+ 添加单位");
+        // 按钮状态样式 - 移除缩放，只保留轻微的按压感
+        String primaryBtnHover = "-fx-background-color: #3651de; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.5), 8, 0, 0, 3);";
+        String dangerBtnHover = "-fx-background-color: #d32f2f; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(245, 62, 87, 0.5), 8, 0, 0, 3);";
+        String successBtnHover = "-fx-background-color: #1eb980; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 8px; -fx-padding: 12px 24px; -fx-font-size: 14px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(38, 222, 129, 0.5), 8, 0, 0, 3);";
+
+        Button addUnitBtn = new Button("添加单位");
         addUnitBtn.setStyle(primaryBtnStyle);
         addUnitBtn.setOnAction(e -> {
             VBox unitBox = createUnitBlock(container);
             container.getChildren().add(unitBox);
+            // 确保新创建的单位块也禁用焦点效果
+            disableFocusForChildren(container);
+        });
+
+        // 增强悬停效果
+        addUnitBtn.setOnMouseEntered(e -> {
+            addUnitBtn.setStyle(primaryBtnHover);
+        });
+        addUnitBtn.setOnMouseExited(e -> {
+            addUnitBtn.setStyle(primaryBtnStyle);
+        });
+        addUnitBtn.setOnMousePressed(e -> {
+            addUnitBtn.setStyle(primaryBtnHover + " -fx-translate-y: 0px;");
+        });
+        addUnitBtn.setOnMouseReleased(e -> {
+            addUnitBtn.setStyle(primaryBtnHover);
         });
 
         Button clearBtn = new Button("清空");
@@ -85,6 +145,20 @@ public class VulnTreeInputWindow {
         clearBtn.setOnAction(e -> {
             container.getChildren().clear();
             unitEntries.clear();
+        });
+
+        // 清空按钮悬停效果
+        clearBtn.setOnMouseEntered(e -> {
+            clearBtn.setStyle(dangerBtnHover);
+        });
+        clearBtn.setOnMouseExited(e -> {
+            clearBtn.setStyle(dangerBtnStyle);
+        });
+        clearBtn.setOnMousePressed(e -> {
+            clearBtn.setStyle(dangerBtnHover + " -fx-translate-y: 0px;");
+        });
+        clearBtn.setOnMouseReleased(e -> {
+            clearBtn.setStyle(dangerBtnHover);
         });
 
         Button saveBtn = new Button("保存");
@@ -103,16 +177,41 @@ public class VulnTreeInputWindow {
             }
         });
 
-        // 按钮容器样式
-        HBox btnBox = new HBox(12, addUnitBtn, clearBtn, saveBtn);
+        // 保存按钮悬停效果
+        saveBtn.setOnMouseEntered(e -> {
+            saveBtn.setStyle(successBtnHover);
+        });
+        saveBtn.setOnMouseExited(e -> {
+            saveBtn.setStyle(successBtnStyle);
+        });
+        saveBtn.setOnMousePressed(e -> {
+            saveBtn.setStyle(successBtnHover + " -fx-translate-y: 0px;");
+        });
+        saveBtn.setOnMouseReleased(e -> {
+            saveBtn.setStyle(successBtnHover);
+        });
+
+        // 简洁按钮容器样式
+        HBox btnBox = new HBox(15, addUnitBtn, clearBtn, saveBtn);
         btnBox.setAlignment(Pos.CENTER);
-        btnBox.setPadding(new Insets(0, 0, 20, 0));
+        btnBox.setPadding(new Insets(0, 0, 25, 0));
+        btnBox.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-border-color: transparent;");
+        btnBox.setFocusTraversable(false);
 
         root.getChildren().addAll(btnBox, scrollPane);
 
         loadDataToUI(container);
 
+        // 递归禁用所有容器的焦点效果
+        disableFocusForChildren(container);
+
         Scene scene = new Scene(root, 1200, 650);
+
+        // 简单直接的全局样式设置
+        String globalStyle = "*{-fx-focus-color: transparent; -fx-faint-focus-color: transparent;}";
+        scene.getStylesheets().add("data:text/css," + globalStyle);
+
+        // ScenicView.show(scene); // 临时注释掉调试工具，可能影响渲染
         stage.setScene(scene);
         stage.setMinWidth(900);
         stage.setMinHeight(600);
@@ -126,40 +225,80 @@ public class VulnTreeInputWindow {
      */
     private VBox createUnitBlock(VBox container) {
         VBox unitBox = new VBox(10);
-        unitBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 5, 0, 0, 2);");
+        unitBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        unitBox.setFocusTraversable(false); // 禁用焦点，避免蓝色边框
 
         HBox titleBox = new HBox(12);
         titleBox.setAlignment(Pos.CENTER_LEFT);
 
-        Label unitLabel = new Label("【单位】");
+        // 简洁标签样式
+        Label unitLabel = new Label("单位");
         unitLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2d3436;");
 
+        // 简洁输入框样式
         TextField unitName = new TextField();
         unitName.setPromptText("单位名称（必填）");
-        unitName.setStyle("-fx-font-size: 14px; -fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px;");
+        unitName.setStyle("-fx-font-size: 14px; -fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
         unitName.setTooltip(new Tooltip("请输入单位名称"));
 
+        // 阻止焦点冒泡到父容器
+        unitName.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                // 当输入框获得焦点时，手动设置父容器不显示焦点边框
+                unitBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 8px; -fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+
+        // 简洁删除按钮
         Button delUnitBtn = new Button("×");
-        delUnitBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 12px;");
+        String delUnitBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.3), 3, 0, 0, 1);";
+        String delUnitBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.5), 5, 0, 0, 2);";
+        delUnitBtn.setStyle(delUnitBtnStyle);
         delUnitBtn.setOnAction(e -> {
             container.getChildren().remove(unitBox);
         });
 
+        // 删除按钮悬停效果
+        delUnitBtn.setOnMouseEntered(e -> delUnitBtn.setStyle(delUnitBtnHover));
+        delUnitBtn.setOnMouseExited(e -> delUnitBtn.setStyle(delUnitBtnStyle));
+
         HBox.setHgrow(unitName, Priority.ALWAYS);
         titleBox.getChildren().addAll(unitLabel, unitName, delUnitBtn);
 
-        VBox systemsBox = new VBox(10);
+        VBox systemsBox = new VBox(15);
 
         unitBox.getChildren().addAll(titleBox, systemsBox);
 
-        // 创建添加系统按钮容器
+        // 简洁添加系统按钮容器
         HBox addSystemBtnContainer = new HBox();
         addSystemBtnContainer.setAlignment(Pos.CENTER);
+        addSystemBtnContainer.setPadding(new Insets(10, 0, 0, 0));
+
+        // 美化系统按钮样式
+        String systemBtnStyle = "-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 10px 18px; -fx-font-size: 13px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.3), 4, 0, 0, 2);";
+        String systemBtnHover = "-fx-background-color: #5ba3f5; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 10px 18px; -fx-font-size: 13px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.5), 6, 0, 0, 3);";
+
         Button addSystemBtn = new Button("+ 添加系统");
-        addSystemBtn.setStyle("-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 8px 16px;");
+        addSystemBtn.setStyle(systemBtnStyle);
         addSystemBtn.setOnAction(e -> {
             VBox systemBox = createSystemBlock(systemsBox);
             systemsBox.getChildren().add(systemBox);
+            // 确保新创建的系统块也禁用焦点效果
+            disableFocusForChildren(systemsBox);
+        });
+
+        // 添加系统按钮悬停效果
+        addSystemBtn.setOnMouseEntered(e -> {
+            addSystemBtn.setStyle(systemBtnHover);
+        });
+        addSystemBtn.setOnMouseExited(e -> {
+            addSystemBtn.setStyle(systemBtnStyle);
+        });
+        addSystemBtn.setOnMousePressed(e -> {
+            addSystemBtn.setStyle(systemBtnHover + " -fx-translate-y: 0px;");
+        });
+        addSystemBtn.setOnMouseReleased(e -> {
+            addSystemBtn.setStyle(systemBtnHover);
         });
         addSystemBtnContainer.getChildren().add(addSystemBtn);
 
@@ -175,39 +314,78 @@ public class VulnTreeInputWindow {
      */
     private VBox createSystemBlock(VBox systemsBox) {
         VBox systemBox = new VBox(8);
-        systemBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 6px; -fx-background-color: white; -fx-padding: 12px; -fx-background-radius: 6px;");
+        systemBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 6px; -fx-background-color: white; -fx-padding: 12px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        systemBox.setFocusTraversable(false); // 禁用焦点，避免蓝色边框
 
         HBox titleBox = new HBox(10);
         titleBox.setAlignment(Pos.CENTER_LEFT);
 
-        Label systemLabel = new Label("【系统】");
+        // 简洁系统标签
+        Label systemLabel = new Label("系统");
         systemLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #2d3436;");
 
+        // 简洁系统名称输入框
         TextField systemName = new TextField();
         systemName.setPromptText("系统名称（必填）");
-        systemName.setStyle("-fx-font-size: 13px; -fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 6px;");
+        systemName.setStyle("-fx-font-size: 13px; -fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
         systemName.setTooltip(new Tooltip("请输入系统名称"));
 
+        // 阻止焦点冒泡到父容器
+        systemName.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                // 当输入框获得焦点时，手动设置父容器不显示焦点边框
+                systemBox.setStyle("-fx-border-color: #dfe6e9; -fx-border-radius: 6px; -fx-background-color: white; -fx-padding: 12px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+
+        // 简洁系统删除按钮
         Button delSystemBtn = new Button("×");
-        delSystemBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 4px 10px; -fx-font-size: 12px;");
+        String delSystemBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 4px 10px; -fx-font-size: 12px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.3), 3, 0, 0, 1);";
+        String delSystemBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 4px 10px; -fx-font-size: 12px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.5), 5, 0, 0, 2);";
+        delSystemBtn.setStyle(delSystemBtnStyle);
         delSystemBtn.setOnAction(e -> systemsBox.getChildren().remove(systemBox));
+
+        // 系统删除按钮悬停效果
+        delSystemBtn.setOnMouseEntered(e -> delSystemBtn.setStyle(delSystemBtnHover));
+        delSystemBtn.setOnMouseExited(e -> delSystemBtn.setStyle(delSystemBtnStyle));
 
         HBox.setHgrow(systemName, Priority.ALWAYS);
         titleBox.getChildren().addAll(systemLabel, systemName, delSystemBtn);
 
-        VBox vulnsBox = new VBox(8);
+        VBox vulnsBox = new VBox(12);
 
         systemBox.getChildren().addAll(titleBox, vulnsBox);
 
-        // 创建添加漏洞按钮容器
+        // 简洁添加漏洞按钮容器
         HBox addVulnBtnContainer = new HBox();
         addVulnBtnContainer.setAlignment(Pos.CENTER);
-        addVulnBtnContainer.setPadding(new Insets(5, 0, 0, 0)); // 添加一些顶部间距
+        addVulnBtnContainer.setPadding(new Insets(8, 0, 0, 0));
+
+        // 美化漏洞按钮样式
+        String vulnBtnStyle = "-fx-background-color: #a29bfe; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(162, 155, 254, 0.3), 4, 0, 0, 2);";
+        String vulnBtnHover = "-fx-background-color: #8b7fea; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 2px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(162, 155, 254, 0.5), 6, 0, 0, 3);";
+
         Button addVulnBtn = new Button("+ 添加漏洞");
-        addVulnBtn.setStyle("-fx-background-color: #a29bfe; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 4px; -fx-padding: 6px 14px; -fx-font-size: 13px;");
+        addVulnBtn.setStyle(vulnBtnStyle);
         addVulnBtn.setOnAction(e -> {
             HBox vulnRow = createVulnRow(vulnsBox);
             vulnsBox.getChildren().add(vulnRow);
+            // 确保新创建的漏洞行也禁用焦点效果
+            disableFocusForChildren(vulnsBox);
+        });
+
+        // 添加漏洞按钮悬停效果
+        addVulnBtn.setOnMouseEntered(e -> {
+            addVulnBtn.setStyle(vulnBtnHover);
+        });
+        addVulnBtn.setOnMouseExited(e -> {
+            addVulnBtn.setStyle(vulnBtnStyle);
+        });
+        addVulnBtn.setOnMousePressed(e -> {
+            addVulnBtn.setStyle(vulnBtnHover + " -fx-translate-y: 0px;");
+        });
+        addVulnBtn.setOnMouseReleased(e -> {
+            addVulnBtn.setStyle(vulnBtnHover);
         });
         addVulnBtnContainer.getChildren().add(addVulnBtn);
 
@@ -233,8 +411,9 @@ public class VulnTreeInputWindow {
      */
     private HBox createVulnRow(VBox vulnsBox, boolean[] isLoadingRef) {
         HBox vulnRow = new HBox(8);
-        vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px;");
-        vulnRow.setAlignment(Pos.CENTER); // 居中对齐，适应不同高度的组件
+        vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        vulnRow.setAlignment(Pos.CENTER);
+        vulnRow.setFocusTraversable(false); // 禁用焦点，避免蓝色边框
 
         // 漏洞名称输入框（支持自动完成）
         TextField name = new TextField();
@@ -301,8 +480,8 @@ public class VulnTreeInputWindow {
         TextField repaired = new TextField();
         repaired.setPromptText("是否修复");
 
-        // 统一样式设置
-        String fieldStyle = "-fx-font-size: 12px; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 3px; -fx-padding: 5px;";
+        // 简洁统一输入框样式
+        String fieldStyle = "-fx-font-size: 12px; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 3px; -fx-padding: 5px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
 
         // 应用统一样式
         name.setStyle(fieldStyle);
@@ -310,6 +489,40 @@ public class VulnTreeInputWindow {
         level.setStyle(fieldStyle);
         harm.setStyle(fieldStyle);
         repaired.setStyle(fieldStyle);
+
+        // 为所有输入框添加焦点控制，防止父容器出现蓝色边框
+        name.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+        desc.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+        level.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+        harm.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+        repaired.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
+
+        // 为TextArea也添加焦点控制
+        fix.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                vulnRow.setStyle("-fx-background-color: white; -fx-border-color: #e9ecef; -fx-border-radius: 4px; -fx-padding: 8px 8px 8px 12px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+            }
+        });
 
         // 设置字段最小宽度
         name.setMinWidth(80);
@@ -394,24 +607,32 @@ public class VulnTreeInputWindow {
             }
         });
 
+        // 简洁漏洞删除按钮
         Button delVulnBtn = new Button("×");
-        delVulnBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 50%; -fx-padding: 4px 6px; -fx-font-size: 11px; -fx-pref-width: 20px; -fx-pref-height: 20px; -fx-min-width: 20px; -fx-min-height: 20px;");
+        String delVulnBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 50%; -fx-padding: 4px 6px; -fx-font-size: 11px; -fx-pref-width: 20px; -fx-pref-height: 20px; -fx-max-width: 20px; -fx-max-height: 20px; -fx-min-width: 20px; -fx-min-height: 20px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.3), 3, 0, 0, 1);";
+        String delVulnBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 50%; -fx-padding: 4px 6px; -fx-font-size: 11px; -fx-pref-width: 20px; -fx-pref-height: 20px; -fx-max-width: 20px; -fx-max-height: 20px; -fx-min-width: 20px; -fx-min-height: 20px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.5), 5, 0, 0, 2);";
+        delVulnBtn.setStyle(delVulnBtnStyle);
         delVulnBtn.setOnAction(e -> vulnsBox.getChildren().remove(vulnRow));
+
+        // 漏洞删除按钮悬停效果
+        delVulnBtn.setOnMouseEntered(e -> delVulnBtn.setStyle(delVulnBtnHover));
+        delVulnBtn.setOnMouseExited(e -> delVulnBtn.setStyle(delVulnBtnStyle));
 
         vulnRow.getChildren().addAll(name, desc, level, harm, fix, repaired, delVulnBtn);
 
-        // 设置布局权重，确保X按钮有足够空间
-        HBox.setHgrow(name, Priority.ALWAYS);
-        HBox.setHgrow(desc, Priority.ALWAYS);
-        HBox.setHgrow(level, Priority.ALWAYS);
-        HBox.setHgrow(harm, Priority.ALWAYS);
-        HBox.setHgrow(fix, Priority.ALWAYS);
+        // 优化布局权重，确保字段合理分配空间
+        HBox.setHgrow(name, Priority.SOMETIMES);
+        HBox.setHgrow(desc, Priority.SOMETIMES);
+        HBox.setHgrow(level, Priority.NEVER);
+        HBox.setHgrow(harm, Priority.SOMETIMES);
+        HBox.setHgrow(fix, Priority.SOMETIMES);
         HBox.setHgrow(repaired, Priority.NEVER);
         HBox.setHgrow(delVulnBtn, Priority.NEVER);
 
-        // 设置最小宽度
-        fix.setMinWidth(100);
-        delVulnBtn.setMaxWidth(25);
+        // 确保修复建议字段有合适的宽度
+        fix.setMinWidth(150);
+        delVulnBtn.setMaxWidth(30);
+        delVulnBtn.setMinWidth(30);
 
         return vulnRow;
     }
@@ -648,6 +869,24 @@ public class VulnTreeInputWindow {
     }
 
     /**
+     * 递归禁用所有子容器的焦点效果
+     * @param parent 父容器
+     */
+    private void disableFocusForChildren(Pane parent) {
+        for (Node child : parent.getChildren()) {
+            if (child instanceof Pane) {
+                Pane childPane = (Pane) child;
+                childPane.setFocusTraversable(false);
+                childPane.setStyle(childPane.getStyle() + "; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-focus-traversable: false;");
+                disableFocusForChildren(childPane); // 递归处理
+            } else if (child instanceof VBox || child instanceof HBox) {
+                child.setFocusTraversable(false);
+                child.setStyle(child.getStyle() + "; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-focus-traversable: false;");
+            }
+        }
+    }
+
+    /**
      * 自定义工具提示类，用于显示建议列表
      */
     private static class CustomTooltip {
@@ -657,8 +896,20 @@ public class VulnTreeInputWindow {
 
         public CustomTooltip() {
             listView = new ListView<>();
-            listView.setPrefHeight(120);
-            listView.setPrefWidth(250);
+            listView.setPrefHeight(150);
+            listView.setPrefWidth(280);
+
+            // 美化ListView样式
+            listView.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-border-color: #e9ecef;" +
+                "-fx-border-radius: 8px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 8, 0, 0, 4);" +
+                "-fx-background-insets: 0;" +
+                "-fx-padding: 0;" +
+                "-fx-focus-color: transparent;" +
+                "-fx-faint-focus-color: transparent;"
+            );
             listView.setCellFactory(param -> {
                 ListCell<String> cell = new ListCell<String>() {
                     @Override
@@ -666,11 +917,60 @@ public class VulnTreeInputWindow {
                         super.updateItem(item, empty);
                         if (empty || item == null) {
                             setText(null);
+                            setGraphic(null);
+                            setStyle(
+                                "-fx-background-color: transparent;" +
+                                "-fx-border-color: transparent;" +
+                                "-fx-padding: 8px 12px;"
+                            );
                         } else {
                             setText(item);
+                            setStyle(
+                                "-fx-background-color: transparent;" +
+                                "-fx-border-color: transparent;" +
+                                "-fx-text-fill: #2d3436;" +
+                                "-fx-font-size: 13px;" +
+                                "-fx-font-family: 'System';" +
+                                "-fx-padding: 8px 12px;" +
+                                "-fx-background-insets: 0;" +
+                                "-fx-border-insets: 0;"
+                            );
                         }
                     }
                 };
+
+                // 悬停效果
+                cell.setOnMouseEntered(e -> {
+                    if (!cell.isEmpty()) {
+                        cell.setStyle(
+                            "-fx-background-color: #f8f9fa;" +
+                            "-fx-border-color: transparent;" +
+                            "-fx-text-fill: #2d3436;" +
+                            "-fx-font-size: 13px;" +
+                            "-fx-font-family: 'System';" +
+                            "-fx-padding: 8px 12px;" +
+                            "-fx-background-insets: 0;" +
+                            "-fx-border-insets: 0;" +
+                            "-fx-cursor: hand;"
+                        );
+                    }
+                });
+
+                cell.setOnMouseExited(e -> {
+                    if (!cell.isEmpty()) {
+                        cell.setStyle(
+                            "-fx-background-color: transparent;" +
+                            "-fx-border-color: transparent;" +
+                            "-fx-text-fill: #2d3436;" +
+                            "-fx-font-size: 13px;" +
+                            "-fx-font-family: 'System';" +
+                            "-fx-padding: 8px 12px;" +
+                            "-fx-background-insets: 0;" +
+                            "-fx-border-insets: 0;"
+                        );
+                    }
+                });
+
                 cell.setOnMouseClicked(e -> {
                     if (e.getClickCount() == 1 && !cell.isEmpty()) {
                         if (onSelect != null) {
@@ -683,9 +983,17 @@ public class VulnTreeInputWindow {
 
             tooltip = new Tooltip();
             tooltip.setGraphic(listView);
-            tooltip.setShowDelay(Duration.millis(100));
+            tooltip.setShowDelay(Duration.millis(150));
             tooltip.setHideDelay(Duration.millis(0));
             tooltip.setShowDuration(Duration.seconds(30));
+
+            // 美化Tooltip样式
+            tooltip.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-border-color: transparent;" +
+                "-fx-padding: 0;" +
+                "-fx-background-insets: 0;"
+            );
         }
 
         public void showSuggestions(List<String> suggestions, TextField owner, Consumer<String> onSelect) {
