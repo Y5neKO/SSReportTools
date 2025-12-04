@@ -70,10 +70,17 @@ public class MainWindow {
     private Button saveTemplateButton;
     private VBox mainVBox;
     private Button deleteTemplateButton;
+    private Button editTemplateButton; // 编辑配置名称按钮
+    private Button editReportTemplateButton; // 编辑报告样式名称按钮
     private Button reportTemplateBtn;
 
     // 当前使用的模板路径
     private String currentTemplatePath;
+
+    // 原始样式常量，用于重置字段样式
+    private static final String TEXT_FIELD_STYLE = "-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;";
+    private static final String DATE_FIELD_STYLE = "-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white; -fx-prompt-text-fill: #95a5a6;";
+    private static final String RADIO_BUTTON_STYLE = "-fx-font-size: 11px; -fx-text-fill: #2d3436; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
 
     // 漏洞库编辑按钮
     private VulnEditorWindow vuLnEditorWindow;
@@ -258,6 +265,11 @@ public class MainWindow {
         deleteTemplateBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 4px 8px; -fx-font-size: 10px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0;");
         deleteTemplateBtn.setOnAction(e -> deleteSelectedTemplate());
 
+        // 编辑报告样式名称按钮
+        editReportTemplateButton = new Button("编辑名称");
+        editReportTemplateButton.setStyle("-fx-background-color: #4834d4; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 4px 8px; -fx-font-size: 10px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0;");
+        editReportTemplateButton.setOnAction(e -> editReportTemplateName());
+
         // 刷新模板列表的方法
         refreshTemplateList(templateComboBox);
 
@@ -270,7 +282,7 @@ public class MainWindow {
         // 模板选择事件监听
         templateComboBox.setOnAction(e -> {
             String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
-            if (selectedTemplate != null) {
+            if (selectedTemplate != null && !selectedTemplate.equals("选择Word报告样式")) {
                 currentTemplatePath = GlobalConfig.USER_TEMPLATE_DIR + "/" + selectedTemplate;
                 LogUtils.info(MainWindow.class, "模板切换到: " + currentTemplatePath);
 
@@ -283,6 +295,9 @@ public class MainWindow {
                 if (!templateDir.exists()) {
                     showAlert("警告", "选择的模板目录不存在: " + selectedTemplate + "\n路径: " + fullPath);
                 }
+            } else {
+                // 没有选择有效模板，重置当前模板路径
+                currentTemplatePath = null;
             }
         });
 
@@ -290,7 +305,7 @@ public class MainWindow {
         Label reportTemplateLabel = new Label("Word报告样式:");
         reportTemplateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
-        HBox templateManageBox = new HBox(8, reportTemplateLabel, templateComboBox, deleteTemplateBtn);
+        HBox templateManageBox = new HBox(8, reportTemplateLabel, templateComboBox, editReportTemplateButton, deleteTemplateBtn);
         templateManageBox.setAlignment(Pos.CENTER_RIGHT);
 
         // 创建一个弹性空间，用于撑开布局
@@ -383,6 +398,12 @@ public class MainWindow {
             if (managerField.getText().trim().isEmpty()) {
                 markFieldError(managerField);
                 errorMsg.append("项目经理不能为空。\n");
+            }
+
+            // 检查是否选择了Word报告样式
+            String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
+            if (selectedTemplate == null || selectedTemplate.equals("选择Word报告样式")) {
+                errorMsg.append("请选择Word报告样式。\n");
             }
 
             // 如果有错误，弹窗提示并返回
@@ -663,15 +684,22 @@ public class MainWindow {
      * 重置所有字段的样式
      */
     private void resetFieldStyles() {
-        Control[] allFields = {
-                clientNameField, contractorNameField, testDateField,
-                reportYearField, reportMonthField, reportDayField,
-                reportAuthorField, testerField, managerField,
-                rbInitialTest, rbRetestTest
-        };
-        for (Control field : allFields) {
-            field.setStyle(""); // 清空样式
-        }
+        // 重置文本字段样式
+        clientNameField.setStyle(TEXT_FIELD_STYLE);
+        contractorNameField.setStyle(TEXT_FIELD_STYLE);
+        testDateField.setStyle(DATE_FIELD_STYLE);
+        reportAuthorField.setStyle(TEXT_FIELD_STYLE);
+        testerField.setStyle(TEXT_FIELD_STYLE);
+        managerField.setStyle(TEXT_FIELD_STYLE);
+
+        // 重置日期字段样式
+        reportYearField.setStyle(DATE_FIELD_STYLE);
+        reportMonthField.setStyle(DATE_FIELD_STYLE);
+        reportDayField.setStyle(DATE_FIELD_STYLE);
+
+        // 重置单选按钮样式
+        rbInitialTest.setStyle(RADIO_BUTTON_STYLE);
+        rbRetestTest.setStyle(RADIO_BUTTON_STYLE);
     }
 
     /**
@@ -708,6 +736,9 @@ public class MainWindow {
         String deleteBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.2), 2, 0, 0, 1);";
         String deleteBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.4), 3, 0, 0, 1);";
 
+        String editBtnStyle = "-fx-background-color: #4834d4; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(72, 52, 212, 0.2), 2, 0, 0, 1);";
+        String editBtnHover = "-fx-background-color: #3742fa; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(72, 52, 212, 0.4), 3, 0, 0, 1);";
+
         saveTemplateButton = new Button("保存配置");
         saveTemplateButton.setStyle(saveBtnStyle);
         saveTemplateButton.setOnMouseEntered(e -> saveTemplateButton.setStyle(saveBtnHover));
@@ -727,10 +758,25 @@ public class MainWindow {
             }
         });
 
+        // 新增编辑配置按钮
+        editTemplateButton = new Button("编辑名称");
+        editTemplateButton.setStyle(editBtnStyle);
+        editTemplateButton.setDisable(true); // 默认禁用，没选中配置时不可用
+        editTemplateButton.setOnMouseEntered(e -> {
+            if (!editTemplateButton.isDisabled()) {
+                editTemplateButton.setStyle(editBtnHover);
+            }
+        });
+        editTemplateButton.setOnMouseExited(e -> {
+            if (!editTemplateButton.isDisabled()) {
+                editTemplateButton.setStyle(editBtnStyle);
+            }
+        });
+
         // 创建选择区域和保存区域
         HBox selectBox = new HBox(8, templateLabel, customerTemplateComboBox);
         HBox nameBox = new HBox(8, nameLabel, templateNameField);
-        HBox buttonBox = new HBox(8, saveTemplateButton, deleteTemplateButton);
+        HBox buttonBox = new HBox(8, saveTemplateButton, editTemplateButton, deleteTemplateButton);
 
         selectBox.setAlignment(Pos.CENTER_LEFT);
         nameBox.setAlignment(Pos.CENTER_LEFT);
@@ -755,8 +801,12 @@ public class MainWindow {
             if (selected != null) {
                 loadTemplate(selected);
                 deleteTemplateButton.setDisable(false);
+                editTemplateButton.setDisable(false);
+                // 设置配置名称字段为选中的配置名
+                templateNameField.setText(selected);
             } else {
                 deleteTemplateButton.setDisable(true);
+                editTemplateButton.setDisable(true);
             }
         });
 
@@ -791,12 +841,83 @@ public class MainWindow {
                         loadTemplateList();
                         customerTemplateComboBox.setValue(null);
                         deleteTemplateButton.setDisable(true);
+                        editTemplateButton.setDisable(true);
                         // 清空界面数据，避免残留
                         templateNameField.clear();
                         setCurrentData(new JSONObject());
                     } else {
                         showAlert("错误", "删除模板失败！");
                     }
+                }
+            });
+        });
+
+        // 编辑配置名称按钮事件处理
+        editTemplateButton.setOnAction(e -> {
+            String selected = customerTemplateComboBox.getValue();
+            if (selected == null) {
+                showAlert("错误", "请先选择一个配置进行编辑！");
+                return;
+            }
+
+            // 创建编辑对话框
+            javafx.scene.control.Dialog<String> editDialog = new javafx.scene.control.Dialog<>();
+            editDialog.setTitle("编辑配置名称");
+            editDialog.setHeaderText("修改配置名称: " + selected);
+
+            // 设置对话框按钮
+            ButtonType confirmButtonType = new ButtonType("确认", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButtonType = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
+            editDialog.getDialogPane().getButtonTypes().addAll(confirmButtonType, cancelButtonType);
+
+            // 创建输入字段
+            TextField newNameField = new TextField(selected);
+            newNameField.setPromptText("输入新的配置名称");
+
+            // 设置对话框内容
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            grid.add(new Label("新配置名称:"), 0, 0);
+            grid.add(newNameField, 1, 0);
+
+            editDialog.getDialogPane().setContent(grid);
+
+            // 请求焦点并默认选择文本
+            Platform.runLater(() -> newNameField.requestFocus());
+            newNameField.selectAll();
+
+            // 转换结果
+            editDialog.setResultConverter(dialogButton -> {
+                if (dialogButton == confirmButtonType) {
+                    String newName = newNameField.getText().trim();
+                    if (newName.isEmpty()) {
+                        return null;
+                    }
+                    return newName;
+                }
+                return null;
+            });
+
+            // 显示对话框并处理结果
+            Optional<String> result = editDialog.showAndWait();
+            result.ifPresent(newName -> {
+                // 检查新名称是否与现有配置重名（排除当前配置）
+                if (!newName.equals(selected) && isTemplateNameExists(newName)) {
+                    showAlert("错误", "配置名称已存在，请使用其他名称！");
+                    return;
+                }
+
+                // 重命名配置文件
+                if (renameTemplateFile(selected, newName)) {
+                    showAlert("成功", "配置名称已更新为: " + newName);
+                    loadTemplateList(); // 刷新列表
+                    customerTemplateComboBox.setValue(newName); // 选择新名称
+                    templateNameField.setText(newName); // 更新输入框
+                } else {
+                    showAlert("错误", "重命名配置失败！");
                 }
             });
         });
@@ -1130,6 +1251,82 @@ public class MainWindow {
     }
 
     /**
+     * 编辑报告样式模板名称
+     */
+    private void editReportTemplateName() {
+        String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
+        if (selectedTemplate == null || selectedTemplate.trim().isEmpty()) {
+            showAlert("提示", "请先选择要编辑的报告样式模板！");
+            return;
+        }
+
+        // 创建编辑对话框
+        javafx.scene.control.Dialog<String> editDialog = new javafx.scene.control.Dialog<>();
+        editDialog.setTitle("编辑报告样式名称");
+        editDialog.setHeaderText("修改报告样式模板名称: " + selectedTemplate);
+
+        // 设置对话框按钮
+        ButtonType confirmButtonType = new ButtonType("确认", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
+        editDialog.getDialogPane().getButtonTypes().addAll(confirmButtonType, cancelButtonType);
+
+        // 创建输入字段
+        TextField newNameField = new TextField(selectedTemplate);
+        newNameField.setPromptText("输入新的样式模板名称");
+
+        // 设置对话框内容
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("新样式名称:"), 0, 0);
+        grid.add(newNameField, 1, 0);
+
+        editDialog.getDialogPane().setContent(grid);
+
+        // 请求焦点并默认选择文本
+        Platform.runLater(() -> newNameField.requestFocus());
+        newNameField.selectAll();
+
+        // 转换结果
+        editDialog.setResultConverter(dialogButton -> {
+            if (dialogButton == confirmButtonType) {
+                String newName = newNameField.getText().trim();
+                if (newName.isEmpty()) {
+                    return null;
+                }
+                return newName;
+            }
+            return null;
+        });
+
+        // 显示对话框并处理结果
+        Optional<String> result = editDialog.showAndWait();
+        result.ifPresent(newName -> {
+            // 检查新名称是否与现有模板重名（排除当前模板）
+            if (!newName.equals(selectedTemplate) && isReportTemplateNameExists(newName)) {
+                showAlert("错误", "报告样式模板名称已存在，请使用其他名称！");
+                return;
+            }
+
+            // 重命名报告样式模板目录
+            if (renameReportTemplate(selectedTemplate, newName)) {
+                showAlert("成功", "报告样式模板名称已更新为: " + newName);
+                refreshTemplateList(templateComboBox); // 刷新列表
+                templateComboBox.setValue(newName); // 选择新名称
+
+                // 更新当前模板路径
+                currentTemplatePath = GlobalConfig.USER_TEMPLATE_DIR + "/" + newName;
+
+                LogUtils.info(MainWindow.class, "报告样式模板重命名成功: " + selectedTemplate + " -> " + newName);
+            } else {
+                showAlert("错误", "重命名报告样式模板失败！");
+            }
+        });
+    }
+
+    /**
      * 递归删除目录及其所有内容
      */
     private void deleteDirectory(File directory) throws IOException {
@@ -1172,13 +1369,123 @@ public class MainWindow {
     }
 
     /**
+     * 检查模板名称是否已存在
+     * @param templateName 模板名称
+     * @return 是否存在
+     */
+    private boolean isTemplateNameExists(String templateName) {
+        File dir = new File(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR));
+        if (!dir.exists()) {
+            return false;
+        }
+
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".json"));
+        if (files != null) {
+            for (File f : files) {
+                String existingName = f.getName().replace(".json", "");
+                if (existingName.equals(templateName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 重命名模板文件
+     * @param oldName 旧模板名称
+     * @param newName 新模板名称
+     * @return 是否重命名成功
+     */
+    private boolean renameTemplateFile(String oldName, String newName) {
+        try {
+            File oldFile = new File(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR), oldName + ".json");
+            File newFile = new File(MiscUtils.getAbsolutePath(COMPANY_TEMPLATE_DIR), newName + ".json");
+
+            if (oldFile.exists() && !newFile.exists()) {
+                return oldFile.renameTo(newFile);
+            }
+            return false;
+        } catch (Exception e) {
+            LogUtils.error(MainWindow.class, "重命名模板文件失败: " + oldName + " -> " + newName, e);
+            return false;
+        }
+    }
+
+    /**
+     * 检查报告样式模板名称是否已存在
+     * @param templateName 模板名称
+     * @return 是否存在
+     */
+    private boolean isReportTemplateNameExists(String templateName) {
+        File dir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_TEMPLATE_DIR));
+        if (!dir.exists()) {
+            return false;
+        }
+
+        File[] templates = dir.listFiles(File::isDirectory);
+        if (templates != null) {
+            for (File template : templates) {
+                String existingName = template.getName();
+                if (existingName.equals(templateName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 重命名报告样式模板目录
+     * @param oldName 旧模板名称
+     * @param newName 新模板名称
+     * @return 是否重命名成功
+     */
+    private boolean renameReportTemplate(String oldName, String newName) {
+        try {
+            File oldDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_TEMPLATE_DIR), oldName);
+            File newDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_TEMPLATE_DIR), newName);
+
+            if (oldDir.exists() && !newDir.exists()) {
+                boolean success = oldDir.renameTo(newDir);
+                if (success) {
+                    // 同时重命名对应的组件目录（如果存在）
+                    renameReportTemplateComponents(oldName, newName);
+                }
+                return success;
+            }
+            return false;
+        } catch (Exception e) {
+            LogUtils.error(MainWindow.class, "重命名报告样式模板失败: " + oldName + " -> " + newName, e);
+            return false;
+        }
+    }
+
+    /**
+     * 重命名报告样式模板对应的组件目录
+     * @param oldName 旧模板名称
+     * @param newName 新模板名称
+     */
+    private void renameReportTemplateComponents(String oldName, String newName) {
+        try {
+            File oldComponentDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_COMPONENTS_DIR), oldName);
+            File newComponentDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_COMPONENTS_DIR), newName);
+
+            if (oldComponentDir.exists() && !newComponentDir.exists()) {
+                if (oldComponentDir.renameTo(newComponentDir)) {
+                    LogUtils.info(MainWindow.class, "报告样式模板组件目录重命名成功: " + oldName + " -> " + newName);
+                }
+            }
+        } catch (Exception e) {
+            LogUtils.error(MainWindow.class, "重命名报告样式模板组件目录失败: " + oldName + " -> " + newName, e);
+        }
+    }
+
+    /**
      * 获取当前使用的模板路径
      */
     public String getCurrentTemplatePath() {
-        if (currentTemplatePath == null || currentTemplatePath.trim().isEmpty()) {
-            // 默认返回硬编码的模板路径
-            return GlobalConfig.DOC_TEMPLATE_PATH;
-        }
+        // 不提供默认模板路径，必须选择有效模板
         return currentTemplatePath;
     }
 
