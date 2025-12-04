@@ -6,6 +6,7 @@ import com.y5neko.ssrtools.utils.LogUtils;
 import com.y5neko.ssrtools.utils.MiscUtils;
 import com.y5neko.ssrtools.utils.ZipUtils;
 import com.y5neko.ssrtools.utils.WordPlaceholderTest;
+import com.y5neko.ssrtools.utils.WordXmlPlaceholderExtractor;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -45,6 +46,7 @@ public class ReportTemplateMakerWindow {
     private ProgressBar progressBar;
     private Button uploadButton;
     private Button fixButton;
+    private Button extractButton;
     private Button exportButton;
     private TextArea logArea;
 
@@ -53,7 +55,10 @@ public class ReportTemplateMakerWindow {
     private String templateDirPath;
     private String templateName;
     private boolean isProcessed = false;
+    private boolean isExtracted = false;
     private String lastGeneratedDocxPath; // 最后生成的docx文件路径
+    private boolean shouldCreateNewDirectory = false; // 是否创建新目录（避免冲突）
+    private String newDirectorySuffix = ""; // 统一的新目录后缀（时间戳）
 
     // 按钮样式
     private String primaryBtnStyle = "-fx-background-color: #4361ee; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 8px 16px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(67, 97, 238, 0.2), 3, 0, 0, 1);";
@@ -153,13 +158,19 @@ public class ReportTemplateMakerWindow {
         fixButton.setOnMouseExited(e -> fixButton.setStyle(warningBtnStyle));
         fixButton.setDisable(true);
 
+        extractButton = new Button("提取漏洞详情主体标题");
+        extractButton.setStyle(primaryBtnStyle);
+        extractButton.setOnMouseEntered(e -> extractButton.setStyle(primaryBtnHover));
+        extractButton.setOnMouseExited(e -> extractButton.setStyle(primaryBtnStyle));
+        extractButton.setDisable(true);
+
         exportButton = new Button("保存样式模板");
         exportButton.setStyle(successBtnStyle);
         exportButton.setOnMouseEntered(e -> exportButton.setStyle(successBtnHover));
         exportButton.setOnMouseExited(e -> exportButton.setStyle(successBtnStyle));
         exportButton.setDisable(true);
 
-        buttonBox.getChildren().addAll(fixButton, exportButton);
+        buttonBox.getChildren().addAll(fixButton, extractButton, exportButton);
         return buttonBox;
     }
 
@@ -206,18 +217,70 @@ public class ReportTemplateMakerWindow {
     }
 
     /**
-     * 清理缓存目录
+     * 清理缓存目录（保留cache目录本身，清空所有内容）
      */
     private void clearCacheDirectory() {
         try {
             String cachePath = MiscUtils.getAbsolutePath(WORKSPACE_CACHE_DIR);
             File cacheDir = new File(cachePath);
-            if (cacheDir.exists()) {
-                FileUtils.cleanDirectory(cachePath);
+            if (cacheDir.exists() && cacheDir.isDirectory()) {
+                // 删除目录下的所有文件和子目录
+                File[] files = cacheDir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isDirectory()) {
+                            // 递归删除子目录及其内容
+                            deleteDirectoryRecursively(file);
+                        } else {
+                            // 删除文件
+                            if (file.delete()) {
+                                LogUtils.debug(ReportTemplateMakerWindow.class, "已删除缓存文件: " + file.getName());
+                            } else {
+                                LogUtils.warn(ReportTemplateMakerWindow.class, "无法删除缓存文件: " + file.getName());
+                            }
+                        }
+                    }
+                }
                 LogUtils.info(ReportTemplateMakerWindow.class, "已清理模板制作缓存目录: " + cachePath);
+            } else {
+                // 如果缓存目录不存在，创建它
+                cacheDir.mkdirs();
+                LogUtils.info(ReportTemplateMakerWindow.class, "已创建缓存目录: " + cachePath);
             }
         } catch (Exception e) {
             LogUtils.error(ReportTemplateMakerWindow.class, "清理缓存目录失败", e);
+        }
+    }
+
+    /**
+     * 递归删除目录及其所有内容
+     */
+    private void deleteDirectoryRecursively(File directory) {
+        try {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        // 递归删除子目录
+                        deleteDirectoryRecursively(file);
+                    } else {
+                        // 删除文件
+                        if (file.delete()) {
+                            LogUtils.debug(ReportTemplateMakerWindow.class, "已删除文件: " + file.getPath());
+                        } else {
+                            LogUtils.warn(ReportTemplateMakerWindow.class, "无法删除文件: " + file.getPath());
+                        }
+                    }
+                }
+            }
+            // 删除空目录
+            if (directory.delete()) {
+                LogUtils.debug(ReportTemplateMakerWindow.class, "已删除目录: " + directory.getPath());
+            } else {
+                LogUtils.warn(ReportTemplateMakerWindow.class, "无法删除目录: " + directory.getPath());
+            }
+        } catch (Exception e) {
+            LogUtils.error(ReportTemplateMakerWindow.class, "递归删除目录失败: " + directory.getPath(), e);
         }
     }
 
@@ -227,6 +290,7 @@ public class ReportTemplateMakerWindow {
     private void setupEventHandlers() {
         uploadButton.setOnAction(e -> uploadFile());
         fixButton.setOnAction(e -> fixPlaceholders());
+        extractButton.setOnAction(e -> extractComponents());
         exportButton.setOnAction(e -> saveTemplate());
     }
 
@@ -244,17 +308,26 @@ public class ReportTemplateMakerWindow {
 
         File selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
-            // 如果之前有处理的文件，先清理缓存
-            if (isProcessed) {
-                clearCacheDirectory();
-                isProcessed = false;
-                fixButton.setDisable(true);
-                exportButton.setDisable(true);
-                uploadButton.setText("选择Word样式模板 (.doc/.docx)");
-                updateStatus("等待上传文件...", 0);
-                logArea.clear();
-            }
+            // 每次选择文件时（包括首次选择）都清理缓存，确保干净的工作环境
+            clearCacheDirectory();
+
+            // 重置所有状态
+            isProcessed = false;
+            isExtracted = false;
+            shouldCreateNewDirectory = false;
+            newDirectorySuffix = "";
+            fixButton.setDisable(true);
+            extractButton.setDisable(true);
+            exportButton.setDisable(true);
+            uploadButton.setText("选择Word样式模板 (.doc/.docx)");
+            updateStatus("等待上传文件...", 0);
+            logArea.clear();
+
             uploadedFile = selectedFile;
+
+            // 提示用户正在进行清理
+            appendLog("正在清理缓存目录...");
+
             processUploadedFile();
         }
     }
@@ -442,9 +515,10 @@ public class ReportTemplateMakerWindow {
                         // 保存最后生成的docx路径
                         lastGeneratedDocxPath = testDocxPath;
 
-                        // 启用保存按钮
-                        exportButton.setDisable(false);
+                        // 启用提取按钮，禁用保存按钮（分步骤操作）
+                        extractButton.setDisable(false);
                         fixButton.setDisable(true);
+                        exportButton.setDisable(true);
                         isProcessed = true;
                     });
                 } else {
@@ -496,7 +570,7 @@ public class ReportTemplateMakerWindow {
                 alert.setContentText("请选择操作：");
 
                 ButtonType overrideButton = new ButtonType("覆盖现有目录");
-                ButtonType coexistButton = new ButtonType("创建新目录 (" + templateName + "_New)");
+                ButtonType coexistButton = new ButtonType("创建新目录 (带时间戳)");
                 ButtonType cancelButton = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
 
                 alert.getButtonTypes().setAll(overrideButton, coexistButton, cancelButton);
@@ -505,11 +579,15 @@ public class ReportTemplateMakerWindow {
 
                 if (result.isPresent()) {
                     if (result.get() == overrideButton) {
-                        // 用户选择覆盖，在后台线程中执行
+                        // 用户选择覆盖，设置标志并执行
+                        shouldCreateNewDirectory = false;
+                        newDirectorySuffix = "";
                         executeSaveWithOverride(finalDirPath);
                     } else if (result.get() == coexistButton) {
-                        // 用户选择共存，生成新的目录名
-                        String newDirPath = finalDirPath + "_New";
+                        // 用户选择共存，生成统一的时间戳并设置标志
+                        shouldCreateNewDirectory = true;
+                        newDirectorySuffix = "_" + generateTimestampedDirectoryName("");
+                        String newDirPath = finalDirPath + newDirectorySuffix;
                         executeSaveWithNewName(newDirPath);
                     }
                     // 取消则不做任何操作
@@ -614,12 +692,31 @@ public class ReportTemplateMakerWindow {
                     appendLog("总大小: " + totalSize + " 字节");
 
                     String finalTemplateName = isNewName ? templateName + "_New" : templateName;
-                    showAlert("保存成功", "模板元文件已成功保存到：\n\n" + saveDirPath + "\n\n共 " + fileCount + " 个文件\n您现在可以在主界面中选择使用这个模板了。");
+                    String successMessage = "模板文件已成功保存到：\n\n" + saveDirPath + "\n\n共 " + fileCount + " 个文件\n您现在可以在主界面中选择使用这个模板了。";
+
+                    // 如果有组件文件，添加组件保存信息
+                    if (isExtracted) {
+                        String componentDir = shouldCreateNewDirectory ?
+                            GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName + newDirectorySuffix :
+                            GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName;
+                        successMessage += "\n\n标题组件文件已同步保存到：\n" + componentDir;
+                    }
+
+                    showAlert("保存成功", successMessage);
+
+                    // 如果有提取的组件文件，移动到report_components目录
+                    if (isExtracted) {
+                        moveComponentsToReportComponents();
+                    }
 
                     // 重置状态
                     isProcessed = false;
+                    isExtracted = false;
+                    shouldCreateNewDirectory = false;
+                    newDirectorySuffix = "";
                     exportButton.setDisable(true);
                     fixButton.setDisable(true);
+                    extractButton.setDisable(true);
                     uploadButton.setText("选择Word样式模板 (.doc/.docx)");
                     updateStatus("等待上传文件...", 0);
                 });
@@ -770,5 +867,204 @@ public class ReportTemplateMakerWindow {
             size = directory.length();
         }
         return size;
+    }
+
+    /**
+     * 提取漏洞详情主体标题组件
+     */
+    private void extractComponents() {
+        if (templateDirPath == null || templateName == null) {
+            showAlert("错误", "请先上传并修复Word模板文件");
+            return;
+        }
+
+        updateStatus("正在提取组件...", 0.3);
+        appendLog("开始提取漏洞详情主体标题组件...");
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 获取document.xml文件路径
+                String documentXmlPath = templateDirPath + "/word/document.xml";
+
+                // 创建临时输出目录：workspace/cache/report_components/模板名称/
+                String outputDir = GlobalConfig.WORKSPACE_CACHE_DIR + File.separator + "report_components" + File.separator + templateName;
+                File outputDirFile = new File(outputDir);
+
+                // 如果目录已存在，询问用户是否覆盖
+                if (outputDirFile.exists()) {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        alert.setTitle("确认操作");
+                        alert.setHeaderText("组件目录已存在");
+                        alert.setContentText("目录 '" + templateName + "' 已存在，是否要覆盖现有的组件文件？");
+
+                        ButtonType overrideButton = new ButtonType("覆盖现有文件");
+                        ButtonType cancelButton = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+                        alert.getButtonTypes().setAll(overrideButton, cancelButton);
+
+                        Optional<ButtonType> result = alert.showAndWait();
+
+                        if (result.isPresent() && result.get() == overrideButton) {
+                            // 用户确认覆盖，继续执行提取
+                            performExtraction(documentXmlPath, outputDir);
+                        }
+                    });
+                } else {
+                    // 目录不存在，直接创建并提取
+                    performExtraction(documentXmlPath, outputDir);
+                }
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showAlert("错误", "提取组件失败：" + e.getMessage());
+                    updateStatus("提取失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * 执行组件提取操作
+     */
+    private void performExtraction(String documentXmlPath, String outputDir) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Platform.runLater(() -> {
+                    updateStatus("正在提取XML占位符段落...", 0.5);
+                    appendLog("处理文件: " + documentXmlPath);
+                });
+
+                // 使用WordXmlPlaceholderExtractor提取组件
+                WordXmlPlaceholderExtractor.extractPlaceholders(documentXmlPath, outputDir);
+
+                Platform.runLater(() -> {
+                    updateStatus("提取完成！", 1.0);
+                    appendLog("✓ 成功提取漏洞详情主体标题组件");
+                    appendLog("✓ 输出目录: " + outputDir);
+
+                    // 更新状态和按钮可用性
+                    isExtracted = true;
+                    extractButton.setDisable(true);
+                    exportButton.setDisable(false);
+
+                    // 显示成功提示
+                    showAlert("提取成功",
+                        "漏洞详情主体标题组件提取成功！\n\n" +
+                        "提取的文件包括:\n" +
+                        "• first_level_heading.txt (一级标题)\n" +
+                        "• second_level_heading.txt (二级标题)\n" +
+                        "• third_level_heading.txt (三级标题)\n" +
+                        "• fourth_level_heading.txt (四级标题)\n" +
+                        "• normal_text.txt (正文文本)\n\n" +
+                        "临时保存位置: " + outputDir + "\n" +
+                        "点击'保存样式模板'后将移动到config/report_components目录");
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    showAlert("错误", "提取组件失败：" + e.getMessage());
+                    updateStatus("提取失败", 0);
+                    appendLog("错误：" + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * 移动缓存的组件文件到report_components目录
+     */
+    private void moveComponentsToReportComponents() {
+        if (!isExtracted || templateName == null) {
+            return;
+        }
+
+        try {
+            // 源目录：workspace/cache/report_components/模板名称/
+            String sourceDir = GlobalConfig.WORKSPACE_CACHE_DIR + File.separator + "report_components" + File.separator + templateName;
+            File sourceDirFile = new File(sourceDir);
+
+            if (!sourceDirFile.exists()) {
+                return; // 没有提取的组件文件
+            }
+
+            // 根据用户在保存模板时的选择来决定组件目录的命名
+            String finalTargetDir;
+            if (shouldCreateNewDirectory) {
+                // 使用保存时生成的统一时间戳
+                finalTargetDir = GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName + newDirectorySuffix;
+            } else {
+                // 使用原目录名（覆盖模式）
+                finalTargetDir = GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName;
+            }
+
+            File targetDirFile = new File(finalTargetDir);
+
+            // 直接执行移动，不需要再询问用户（已经和模板保存选择同步）
+            performComponentMove(sourceDir, finalTargetDir);
+
+        } catch (Exception e) {
+            Platform.runLater(() -> {
+                appendLog("移动组件文件失败：" + e.getMessage());
+                LogUtils.error(ReportTemplateMakerWindow.class, "移动组件文件失败", e);
+            });
+        }
+    }
+
+    /**
+     * 执行组件文件移动操作
+     */
+    private void performComponentMove(String sourceDir, String targetDir) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Platform.runLater(() -> {
+                    appendLog("正在移动组件文件到report_components目录...");
+                });
+
+                // 创建目标目录
+                File targetDirFile = new File(targetDir);
+                if (targetDirFile.exists()) {
+                    // 清空现有目录
+                    FileUtils.cleanDirectory(targetDir);
+                } else {
+                    targetDirFile.mkdirs();
+                }
+
+                // 移动文件
+                File sourceDirFile = new File(sourceDir);
+                File[] files = sourceDirFile.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isFile()) {
+                            String targetPath = targetDir + File.separator + file.getName();
+                            Files.move(Paths.get(file.getPath()), Paths.get(targetPath));
+                        }
+                    }
+                }
+
+                Platform.runLater(() -> {
+                    appendLog("✓ 组件文件移动完成");
+                    appendLog("  从: " + sourceDir);
+                    appendLog("  到: " + targetDir);
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    appendLog("移动组件文件失败：" + e.getMessage());
+                    LogUtils.error(ReportTemplateMakerWindow.class, "移动组件文件失败", e);
+                });
+            }
+        });
+    }
+
+    /**
+     * 生成带时间戳的新目录名
+     */
+    private String generateTimestampedDirectoryName(String baseName) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日HH时mm分ss秒");
+        String timestamp = now.format(formatter);
+        return baseName + "_" + timestamp;
     }
 }

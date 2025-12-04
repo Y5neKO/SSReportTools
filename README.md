@@ -52,30 +52,30 @@
 
 占位符以`{{{{{占位符}}}}}`的形式表示，占位符内容会被替换为实际值。
 
-| 占位符                 | 描述                                 |
-|---------------------|------------------------------------|
-| paraId              | 随机生成的标识                            |
-| TocName             | 随机生成的标识                            |
-| first_heading_text  | 一级标题文本（相对于单位标题一级，实际上是二级标题，后面的级别同上） |
-| second_heading_text | 二级标题文本                             |
-| third_heading_text  | 三级标题文本                             |
-| fourth_heading_text | 四级标题文本                             |
-| normal_text         | 普通正文文本                             |
-| customer_name       | 客户名称                               |
-| signature_name      | 乙方公司落款                             |
-| is_first_test       | 是否首次测试                             |
-| test_time           | 渗透测试时间                             |
-| report_year         | 报告年份                               |
-| report_month        | 报告月份                               |
-| report_day          | 报告日期                               |
-| report_reporter     | 报告编写人员                             |
-| vul_all_count       | 漏洞总数                               |
-| vul_high_count      | 高危漏洞总数                             |
-| vul_medium_count    | 中危漏洞总数                             |
-| vul_low_count       | 低危漏洞总数                             |
-| pm_name             | 项目经理                               |
-| tester_name         | 渗透测试人员                             |
-| MainContent         | 漏洞结果主内容                            |
+| 占位符                 | 描述                                        |
+|---------------------|-------------------------------------------|
+| paraId              | 随机生成的标识                                   |
+| TocName             | 随机生成的标识                                   |
+| first_heading_text  | 一级标题文本（单位名称）                              |
+| second_heading_text | 二级标题文本（系统名称）                              |
+| third_heading_text  | 三级标题文本（漏洞名称）                              |
+| fourth_heading_text | 四级标题文本（漏洞详情）                              |
+| normal_text         | 普通正文文本                                    |
+| customer_name       | 客户名称                                      |
+| signature_name      | 乙方公司落款                                    |
+| is_first_test       | 是否首次测试                                    |
+| test_time           | 渗透测试时间                                    |
+| report_year         | 报告年份                                      |
+| report_month        | 报告月份                                      |
+| report_day          | 报告日期                                      |
+| report_reporter     | 报告编写人员                                    |
+| vul_all_count       | 漏洞总数                                      |
+| vul_high_count      | 高危漏洞总数                                    |
+| vul_medium_count    | 中危漏洞总数                                    |
+| vul_low_count       | 低危漏洞总数                                    |
+| pm_name             | 项目经理                                      |
+| tester_name         | 渗透测试人员                                    |
+| MainContent         | 漏洞结果主内容（由所有的 单位名称>系统名称>漏洞名称>漏洞详情 构成的主要内容） |
 
 通过占位符表，可手动快速的构建一个自己公司的报告模板，预计在后续版本实现自动解析，进一步解放双手。
 
