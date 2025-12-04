@@ -697,8 +697,8 @@ public class ReportTemplateMakerWindow {
                     // 如果有组件文件，添加组件保存信息
                     if (isExtracted) {
                         String componentDir = shouldCreateNewDirectory ?
-                            GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName + newDirectorySuffix :
-                            GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName;
+                            GlobalConfig.USER_COMPONENTS_DIR + File.separator + templateName + newDirectorySuffix :
+                            GlobalConfig.USER_COMPONENTS_DIR + File.separator + templateName;
                         successMessage += "\n\n标题组件文件已同步保存到：\n" + componentDir;
                     }
 
@@ -936,13 +936,13 @@ public class ReportTemplateMakerWindow {
                     appendLog("处理文件: " + documentXmlPath);
                 });
 
-                // 使用WordXmlPlaceholderExtractor提取组件
-                WordXmlPlaceholderExtractor.extractPlaceholders(documentXmlPath, outputDir);
+                // 使用WordXmlPlaceholderExtractor提取组件，并从源文件中删除提取的段落
+                WordXmlPlaceholderExtractor.extractPlaceholdersAndClean(documentXmlPath, outputDir, true);
 
                 Platform.runLater(() -> {
                     updateStatus("提取完成！", 1.0);
-                    appendLog("✓ 成功提取漏洞详情主体标题组件");
-                    appendLog("✓ 输出目录: " + outputDir);
+                    appendLog("[成功] 提取漏洞详情主体标题组件");
+                    appendLog("[成功] 输出目录: " + outputDir);
 
                     // 更新状态和按钮可用性
                     isExtracted = true;
@@ -958,6 +958,7 @@ public class ReportTemplateMakerWindow {
                         "• third_level_heading.txt (三级标题)\n" +
                         "• fourth_level_heading.txt (四级标题)\n" +
                         "• normal_text.txt (正文文本)\n\n" +
+                        "[成功] 已从document.xml中删除提取的段落\n" +
                         "临时保存位置: " + outputDir + "\n" +
                         "点击'保存样式模板'后将移动到config/report_components目录");
                 });
@@ -992,11 +993,11 @@ public class ReportTemplateMakerWindow {
             // 根据用户在保存模板时的选择来决定组件目录的命名
             String finalTargetDir;
             if (shouldCreateNewDirectory) {
-                // 使用保存时生成的统一时间戳
-                finalTargetDir = GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName + newDirectorySuffix;
+                // 使用保存时生成的统一时间戳，放到user-components目录
+                finalTargetDir = GlobalConfig.USER_COMPONENTS_DIR + File.separator + templateName + newDirectorySuffix;
             } else {
-                // 使用原目录名（覆盖模式）
-                finalTargetDir = GlobalConfig.DOC_COMPONENTS_PATH + File.separator + templateName;
+                // 使用原目录名（覆盖模式），放到user-components目录
+                finalTargetDir = GlobalConfig.USER_COMPONENTS_DIR + File.separator + templateName;
             }
 
             File targetDirFile = new File(finalTargetDir);
@@ -1044,7 +1045,7 @@ public class ReportTemplateMakerWindow {
                 }
 
                 Platform.runLater(() -> {
-                    appendLog("✓ 组件文件移动完成");
+                    appendLog("[成功] 组件文件移动完成");
                     appendLog("  从: " + sourceDir);
                     appendLog("  到: " + targetDir);
                 });

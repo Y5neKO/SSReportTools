@@ -49,6 +49,22 @@ public class GlobalConfig {
      */
     public static final String DOC_TEMPLATE_PATH = DEFAULT_TEMPLATE_DIR; // 保持向后兼容
 
+    // ==================== 标题组件模板路径 ====================
+    /**
+     * 标题组件模板根目录，存放报告标题的组件模板
+     */
+    public static final String COMPONENTS_ROOT = CONFIG_DIR + File.separator + "report_components";
+
+    /**
+     * 默认标题组件模板目录，存放系统内置的标题组件模板
+     */
+    public static final String DEFAULT_COMPONENTS_DIR = COMPONENTS_ROOT + File.separator + "default-components";
+
+    /**
+     * 用户自定义标题组件模板目录，存放与用户样式模板对应的标题组件
+     */
+    public static final String USER_COMPONENTS_DIR = COMPONENTS_ROOT + File.separator + "user-components";
+
     // ==================== 工作空间路径 ====================
     /**
      * 工作空间根目录，存放程序运行时的临时文件和缓存
@@ -77,9 +93,9 @@ public class GlobalConfig {
     public static final String DOC_OUTPUT_DIR = "docs";
 
     /**
-     * 报告组件模板目录，存放各级标题和正文的文本模板组件
+     * 报告组件模板目录（向后兼容，指向默认组件目录）
      */
-    public static final String DOC_COMPONENTS_PATH = CONFIG_DIR + File.separator + "report_components";
+    public static final String DOC_COMPONENTS_PATH = DEFAULT_COMPONENTS_DIR;
 
     // ==================== 文档组件模板路径 ====================
     /**
@@ -143,6 +159,7 @@ public class GlobalConfig {
             DOC_OUTPUT_DIR,                // 文档输出目录
             DEFAULT_TEMPLATE_DIR,          // 默认样式模板目录
             USER_TEMPLATE_DIR,             // 用户自定义样式目录
-            DOC_COMPONENTS_PATH            // 报告组件模板目录
+            DEFAULT_COMPONENTS_DIR,        // 默认标题组件模板目录
+            USER_COMPONENTS_DIR            // 用户自定义标题组件模板目录
     };
 }

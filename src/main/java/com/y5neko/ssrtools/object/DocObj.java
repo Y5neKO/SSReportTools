@@ -15,6 +15,7 @@ public class DocObj {
     private String testTime = "2025年8月6日";
     private String testerName = "Y5neKO";
     private String pmName = "PM";
+    private String templateName = "默认模板";
 
     private int vulAllCount = 9;
     private int vulHighCount = 4;
@@ -147,5 +148,13 @@ public class DocObj {
 
     public void setPmName(String pmName) {
         this.pmName = pmName;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 }

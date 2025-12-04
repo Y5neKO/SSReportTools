@@ -1,0 +1,1 @@
+<w:p w14:paraId="{{{{{paraId}}}}}"><w:pPr><w:ind w:firstLine="480"/></w:pPr><w:r><w:rPr><w:rFonts w:hint="default"/><w:lang w:val="en-US"/></w:rPr><w:t>{{{{{normal_text}}}}}</w:t></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/></w:rPr></w:r></w:p>

@@ -38,51 +38,130 @@ public class DocUtils {
     }
 
     public static String firstHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FIRST_LEVEL_HEADING_TEPMLATE_PATH));
-        return contentTemplate
-                .replace("{{{{{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
-                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        return firstHeadingGen(text, "默认模板");
+    }
+
+    public static String firstHeadingGen(String text, String templateName) {
+        try {
+            String contentTemplate = ComponentLoader.loadComponent(templateName, "first_level_heading.txt");
+            return contentTemplate
+                    .replace("{{{{{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        } catch (IOException e) {
+            LogUtils.error(DocUtils.class, "加载一级标题组件失败: " + templateName, e);
+            // 降级到默认组件
+            String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FIRST_LEVEL_HEADING_TEPMLATE_PATH));
+            return contentTemplate
+                    .replace("{{{{{first_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        }
     }
 
     public static String secondHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(SECOND_LEVEL_HEADING_TEPMLATE_PATH));
-        return contentTemplate
-                .replace("{{{{{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
-                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        return secondHeadingGen(text, "默认模板");
+    }
+
+    public static String secondHeadingGen(String text, String templateName) {
+        try {
+            String contentTemplate = ComponentLoader.loadComponent(templateName, "second_level_heading.txt");
+            return contentTemplate
+                    .replace("{{{{{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        } catch (IOException e) {
+            LogUtils.error(DocUtils.class, "加载二级标题组件失败: " + templateName, e);
+            // 降级到默认组件
+            String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(SECOND_LEVEL_HEADING_TEPMLATE_PATH));
+            return contentTemplate
+                    .replace("{{{{{second_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        }
     }
 
     public static String thirdHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(THIRD_LEVEL_HEADING_TEPMLATE_PATH));
-        return contentTemplate
-                .replace("{{{{{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
-                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        return thirdHeadingGen(text, "默认模板");
+    }
+
+    public static String thirdHeadingGen(String text, String templateName) {
+        try {
+            String contentTemplate = ComponentLoader.loadComponent(templateName, "third_level_heading.txt");
+            return contentTemplate
+                    .replace("{{{{{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        } catch (IOException e) {
+            LogUtils.error(DocUtils.class, "加载三级标题组件失败: " + templateName, e);
+            // 降级到默认组件
+            String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(THIRD_LEVEL_HEADING_TEPMLATE_PATH));
+            return contentTemplate
+                    .replace("{{{{{third_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        }
     }
 
     public static String fourthHeadingGen(String text) {
-        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FOURTH_LEVEL_HEADING_TEPMLATE_PATH));
-        return contentTemplate
-                .replace("{{{{{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
-                .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
-                .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        return fourthHeadingGen(text, "默认模板");
+    }
+
+    public static String fourthHeadingGen(String text, String templateName) {
+        try {
+            String contentTemplate = ComponentLoader.loadComponent(templateName, "fourth_level_heading.txt");
+            return contentTemplate
+                    .replace("{{{{{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        } catch (IOException e) {
+            LogUtils.error(DocUtils.class, "加载四级标题组件失败: " + templateName, e);
+            // 降级到默认组件
+            String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(FOURTH_LEVEL_HEADING_TEPMLATE_PATH));
+            return contentTemplate
+                    .replace("{{{{{fourth_heading_text}}}}}", XmlEscapeUtils.escape(text))
+                    .replace("{{{{{paraId}}}}}", MiscUtils.getParaID())
+                    .replace("{{{{{TocName}}}}}", MiscUtils.getTocName());
+        }
     }
 
     public static String normalTextGen(String text) {
-        String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(NORMAL_TEXT_TEPMLATE_PATH));
+        return normalTextGen(text, "默认模板");
+    }
 
-        if (text.contains("\n")) {
-            StringBuilder result = new StringBuilder();
-            String[] lines = text.split("\n");
+    public static String normalTextGen(String text, String templateName) {
+        try {
+            String contentTemplate = ComponentLoader.loadComponent(templateName, "normal_text.txt");
 
-            for (int i = 0; i < lines.length; i++) {
-                if (i > 0) result.append("\n");
-                result.append(processNormalTextLine(contentTemplate, lines[i]));
+            if (text.contains("\n")) {
+                StringBuilder result = new StringBuilder();
+                String[] lines = text.split("\n");
+
+                for (int i = 0; i < lines.length; i++) {
+                    if (i > 0) result.append("\n");
+                    result.append(processNormalTextLine(contentTemplate, lines[i]));
+                }
+                return result.toString();
+            } else {
+                return processNormalTextLine(contentTemplate, text);
             }
-            return result.toString();
-        } else {
-            return processNormalTextLine(contentTemplate, text);
+        } catch (IOException e) {
+            LogUtils.error(DocUtils.class, "加载正文组件失败: " + templateName, e);
+            // 降级到默认组件
+            String contentTemplate = FileUtils.readFile(MiscUtils.getAbsolutePath(NORMAL_TEXT_TEPMLATE_PATH));
+
+            if (text.contains("\n")) {
+                StringBuilder result = new StringBuilder();
+                String[] lines = text.split("\n");
+
+                for (int i = 0; i < lines.length; i++) {
+                    if (i > 0) result.append("\n");
+                    result.append(processNormalTextLine(contentTemplate, lines[i]));
+                }
+                return result.toString();
+            } else {
+                return processNormalTextLine(contentTemplate, text);
+            }
         }
     }
 
@@ -116,12 +195,13 @@ public class DocUtils {
 
     public static String mainContentGen(ReportData reportData, DocObj docObj) {
         StringBuilder mainContent = new StringBuilder();
+        String templateName = docObj.getTemplateName();
 
         for (Unit unit : reportData.getUnits()) {
-            mainContent.append(firstHeadingGen(unit.getUnitName()));
+            mainContent.append(firstHeadingGen(unit.getUnitName(), templateName));
 
             for (SystemInfo systemInfo : unit.getSystems()) {
-                mainContent.append(secondHeadingGen(systemInfo.getSystemName()));
+                mainContent.append(secondHeadingGen(systemInfo.getSystemName(), templateName));
 
                 for (Vulnerability vulnerability : systemInfo.getVulnerabilities()) {
 
@@ -132,25 +212,25 @@ public class DocUtils {
                         title = "【" + vulnerability.getRiskLevel() + "】" +
                                 vulnerability.getName() + "（" + vulnerability.getIsFixed() + "）";
                     }
-                    mainContent.append(thirdHeadingGen(title));
+                    mainContent.append(thirdHeadingGen(title, templateName));
 
-                    mainContent.append(fourthHeadingGen("漏洞描述"));
-                    mainContent.append(normalTextGen(vulnerability.getVulDesc()));
+                    mainContent.append(fourthHeadingGen("漏洞描述", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getVulDesc(), templateName));
 
-                    mainContent.append(fourthHeadingGen("风险等级"));
-                    mainContent.append(normalTextGen(vulnerability.getRiskLevel()));
+                    mainContent.append(fourthHeadingGen("风险等级", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getRiskLevel(), templateName));
 
-                    mainContent.append(fourthHeadingGen("漏洞危害"));
-                    mainContent.append(normalTextGen(vulnerability.getVulHazards()));
+                    mainContent.append(fourthHeadingGen("漏洞危害", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getVulHazards(), templateName));
 
-                    mainContent.append(fourthHeadingGen("漏洞链接地址"));
-                    mainContent.append(normalTextGen(vulnerability.getVulLinks()));
+                    mainContent.append(fourthHeadingGen("漏洞链接地址", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getVulLinks(), templateName));
 
-                    mainContent.append(fourthHeadingGen("漏洞证明"));
-                    mainContent.append(normalTextGen(vulnerability.getVulDetail()));
+                    mainContent.append(fourthHeadingGen("漏洞证明", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getVulDetail(), templateName));
 
-                    mainContent.append(fourthHeadingGen("修复建议"));
-                    mainContent.append(normalTextGen(vulnerability.getVulFixSuggestion()));
+                    mainContent.append(fourthHeadingGen("修复建议", templateName));
+                    mainContent.append(normalTextGen(vulnerability.getVulFixSuggestion(), templateName));
                 }
             }
         }

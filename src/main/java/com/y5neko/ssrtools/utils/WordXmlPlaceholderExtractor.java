@@ -40,7 +40,22 @@ public class WordXmlPlaceholderExtractor {
      * @throws IOException 文件读写异常
      */
     public static void extractPlaceholders(String xmlFilePath, String outputDir) throws IOException {
+        extractPlaceholdersAndClean(xmlFilePath, outputDir, false);
+    }
+
+    /**
+     * 从document.xml中提取包含占位符的w:p段落，并可选择是否从源文件中删除对应内容
+     *
+     * @param xmlFilePath document.xml文件路径
+     * @param outputDir 输出目录路径
+     * @param cleanSource 是否从源文件中删除提取的段落
+     * @throws IOException 文件读写异常
+     */
+    public static void extractPlaceholdersAndClean(String xmlFilePath, String outputDir, boolean cleanSource) throws IOException {
         System.out.println("开始从 " + xmlFilePath + " 提取占位符段落...");
+        if (cleanSource) {
+            System.out.println("[清理] 启用源文件清理模式，提取后将从document.xml中删除对应段落");
+        }
 
         // 读取XML文件内容
         String xmlContent = readFile(xmlFilePath);
@@ -55,7 +70,12 @@ public class WordXmlPlaceholderExtractor {
         Pattern placeholderPattern = Pattern.compile(PLACEHOLDER_PATTERN);
 
         int foundCount = 0;
+        String cleanedXmlContent = xmlContent;
 
+        // 用于记录需要删除的段落内容
+        java.util.List<String> paragraphsToRemove = new java.util.ArrayList<>();
+
+        // 第一遍：查找并保存需要提取的段落
         while (wPMatcher.find()) {
             String wPContent = wPMatcher.group();
 
@@ -68,7 +88,7 @@ public class WordXmlPlaceholderExtractor {
                 if (PLACEHOLDER_TYPES.containsKey(placeholderName)) {
                     // 检查是否为目录条目（包含PAGEREF _Toc），如果是则跳过
                     if (isTableOfContentsEntry(wPContent)) {
-                        System.out.println("⚠️  跳过目录条目: " + placeholderName + " (包含PAGEREF _Toc)");
+                        System.out.println("[警告] 跳过目录条目: " + placeholderName + " (包含PAGEREF _Toc)");
                         System.out.println("  段落内容: " + wPContent.substring(0, Math.min(150, wPContent.length())) + "...");
                         continue;
                     }
@@ -82,17 +102,48 @@ public class WordXmlPlaceholderExtractor {
                     // 保存处理后的w:p段落到文件
                     saveToFile(processedContent, outputPath);
 
-                    System.out.println("✓ 提取成功: " + placeholderName + " -> " + fileName);
+                    System.out.println("[成功] 提取成功: " + placeholderName + " -> " + fileName);
                     System.out.println("  原始段落: " + wPContent.substring(0, Math.min(100, wPContent.length())) + "...");
                     System.out.println("  处理后段落: " + processedContent.substring(0, Math.min(100, processedContent.length())) + "...");
+
+                    // 如果启用清理模式，记录需要删除的段落
+                    if (cleanSource) {
+                        paragraphsToRemove.add(wPContent);
+                    }
 
                     foundCount++;
                 }
             }
         }
 
+        // 如果启用清理模式，从源文件中删除已提取的段落
+        if (cleanSource && !paragraphsToRemove.isEmpty()) {
+            System.out.println("\n[清理] 开始清理document.xml中的已提取段落...");
+
+            cleanedXmlContent = xmlContent;
+            int removedCount = 0;
+
+            for (String paragraph : paragraphsToRemove) {
+                // 使用字符串替换删除段落
+                String before = cleanedXmlContent;
+                cleanedXmlContent = cleanedXmlContent.replace(paragraph, "");
+
+                if (!before.equals(cleanedXmlContent)) {
+                    removedCount++;
+                    System.out.println("  [成功] 删除段落: " + paragraph.substring(0, Math.min(80, paragraph.length())) + "...");
+                }
+            }
+
+            // 保存清理后的XML内容
+            saveToFile(cleanedXmlContent, xmlFilePath);
+            System.out.println("[成功] 源文件清理完成，删除了 " + removedCount + " 个段落");
+        }
+
         System.out.println("\n提取完成！共提取了 " + foundCount + " 个占位符段落。");
         System.out.println("输出目录: " + outputDir);
+        if (cleanSource) {
+            System.out.println("[成功] 源文件已同步清理");
+        }
     }
 
     /**
@@ -157,12 +208,12 @@ public class WordXmlPlaceholderExtractor {
         File dir = new File(outputDir);
         if (!dir.exists()) {
             if (dir.mkdirs()) {
-                System.out.println("✓ 创建输出目录: " + outputDir);
+                System.out.println("[成功] 创建输出目录: " + outputDir);
             } else {
                 throw new IOException("无法创建输出目录: " + outputDir);
             }
         } else {
-            System.out.println("✓ 使用已存在的输出目录: " + outputDir);
+            System.out.println("[成功] 使用已存在的输出目录: " + outputDir);
         }
     }
 

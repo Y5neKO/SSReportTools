@@ -640,6 +640,14 @@ public class MainWindow {
         doc.setVulLowCount(parseIntOrZero(lowVulnField.getText()));
         doc.setVulAllCount(parseIntOrZero(totalVulnField.getText()));
 
+        // 设置模板名称
+        String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
+        if (selectedTemplate != null && !selectedTemplate.trim().isEmpty()) {
+            doc.setTemplateName(selectedTemplate);
+        } else {
+            doc.setTemplateName("默认模板");
+        }
+
         return doc;
     }
 
@@ -1041,7 +1049,12 @@ public class MainWindow {
         Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
         confirmAlert.setTitle("确认删除");
         confirmAlert.setHeaderText("删除模板: " + selectedTemplate);
-        confirmAlert.setContentText("确定要删除模板 '" + selectedTemplate + "' 吗？\n此操作不可撤销，模板相关的所有文件都将被删除。");
+        confirmAlert.setContentText("确定要删除模板 '" + selectedTemplate + "' 吗？\n\n" +
+                "此操作将删除以下内容：\n" +
+                "• 样式模板文件\n" +
+                "• 对应的标题组件文件\n" +
+                "• 所有历史版本的组件文件\n\n" +
+                "警告：此操作不可撤销！");
 
         ButtonType confirmButton = new ButtonType("确认删除", ButtonBar.ButtonData.OK_DONE);
         ButtonType cancelButton = new ButtonType("取消", ButtonBar.ButtonData.CANCEL_CLOSE);
@@ -1055,8 +1068,42 @@ public class MainWindow {
                 File templateDir = new File(MiscUtils.getAbsolutePath(templatePath));
 
                 if (templateDir.exists() && templateDir.isDirectory()) {
-                    // 递归删除模板目录
+                    // 删除结果统计
+                    int deletedFiles = 0;
+                    StringBuilder deletedItems = new StringBuilder();
+
+                    // 1. 递归删除模板目录
                     deleteDirectory(templateDir);
+                    deletedFiles += countFiles(templateDir);
+                    deletedItems.append("• 样式模板文件\n");
+
+                    // 2. 尝试删除对应的标题组件目录
+                    String componentPath = GlobalConfig.USER_COMPONENTS_DIR + "/" + selectedTemplate;
+                    File componentDir = new File(MiscUtils.getAbsolutePath(componentPath));
+
+                    if (componentDir.exists() && componentDir.isDirectory()) {
+                        deleteDirectory(componentDir);
+                        deletedFiles += countFiles(componentDir);
+                        deletedItems.append("• 标题组件文件\n");
+                    }
+
+                    // 3. 查找并删除带时间戳后缀的组件目录
+                    File userComponentsDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_COMPONENTS_DIR));
+                    if (userComponentsDir.exists() && userComponentsDir.isDirectory()) {
+                        File[] componentDirs = userComponentsDir.listFiles(File::isDirectory);
+                        if (componentDirs != null) {
+                            for (File dir : componentDirs) {
+                                String dirName = dir.getName();
+                                // 检查是否是以模板名称开头的目录（带时间戳后缀）
+                                if (dirName.startsWith(selectedTemplate + "_") &&
+                                    dirName.length() > selectedTemplate.length() + 1) {
+                                    deleteDirectory(dir);
+                                    deletedFiles += countFiles(dir);
+                                    deletedItems.append("• 历史组件版本: ").append(dirName).append("\n");
+                                }
+                            }
+                        }
+                    }
 
                     // 刷新模板列表
                     refreshTemplateList(templateComboBox);
@@ -1066,8 +1113,11 @@ public class MainWindow {
                         currentTemplatePath = null;
                     }
 
-                    showAlert("成功", "模板 '" + selectedTemplate + "' 已成功删除");
-                    LogUtils.info(MainWindow.class, "模板删除成功: " + selectedTemplate);
+                    String successMessage = "模板 '" + selectedTemplate + "' 已成功删除！\n\n" +
+                            "删除的内容包括:\n" + deletedItems.toString() +
+                            "\n共删除 " + deletedFiles + " 个文件";
+                    showAlert("成功", successMessage);
+                    LogUtils.info(MainWindow.class, "模板删除成功: " + selectedTemplate + "，共删除 " + deletedFiles + " 个文件");
                 } else {
                     showAlert("错误", "模板目录不存在或已被删除");
                 }
@@ -1094,6 +1144,31 @@ public class MainWindow {
         if (!directory.delete()) {
             throw new IOException("无法删除文件或目录: " + directory.getAbsolutePath());
         }
+    }
+
+    /**
+     * 统计目录中的文件数量（递归计算）
+     *
+     * @param directory 要统计的目录
+     * @return 文件总数
+     */
+    private int countFiles(File directory) {
+        int count = 0;
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        count += countFiles(file);
+                    } else {
+                        count++;
+                    }
+                }
+            }
+        } else {
+            count = 1;
+        }
+        return count;
     }
 
     /**
