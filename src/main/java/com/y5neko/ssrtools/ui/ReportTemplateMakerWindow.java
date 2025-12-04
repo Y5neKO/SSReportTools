@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.y5neko.ssrtools.config.GlobalConfig.TEMPLATE_MAKER_CACHE_DIR;
-import static com.y5neko.ssrtools.config.GlobalConfig.REPORT_TEMPLATE_DIR;
+import static com.y5neko.ssrtools.config.GlobalConfig.WORKSPACE_CACHE_DIR;
+import static com.y5neko.ssrtools.config.GlobalConfig.USER_TEMPLATE_DIR;
 
 /**
  * 报告模板制作窗口
@@ -81,14 +81,19 @@ public class ReportTemplateMakerWindow {
         mainContainer.setStyle("-fx-background-color: #f8f9fa;");
 
         // 标题
-        Label titleLabel = new Label("报告模板制作工具");
+        Label titleLabel = new Label("Word报告样式制作工具");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
         mainContainer.getChildren().add(titleLabel);
 
         // 说明文本
-        Label descLabel = new Label("上传Word模板文件，自动修复占位符，然后导出可用的模板文件");
+        Label descLabel = new Label("上传Word模板文件，自动修复占位符，然后保存为报告样式模板");
         descLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #636e72;");
         mainContainer.getChildren().add(descLabel);
+
+        // 功能说明
+        Label featureLabel = new Label("• 修复 fragmented 占位符 • 支持自定义样式 • 兼容WPS/Word");
+        featureLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-style: italic;");
+        mainContainer.getChildren().add(featureLabel);
 
         // 分隔线
         Separator separator = new Separator();
@@ -125,7 +130,7 @@ public class ReportTemplateMakerWindow {
         uploadTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
         uploadBox.getChildren().add(uploadTitle);
 
-        uploadButton = new Button("选择Word模板文件 (.doc/.docx)");
+        uploadButton = new Button("选择Word样式模板 (.doc/.docx)");
         uploadButton.setStyle(primaryBtnStyle);
         uploadButton.setOnMouseEntered(e -> uploadButton.setStyle(primaryBtnHover));
         uploadButton.setOnMouseExited(e -> uploadButton.setStyle(primaryBtnStyle));
@@ -148,7 +153,7 @@ public class ReportTemplateMakerWindow {
         fixButton.setOnMouseExited(e -> fixButton.setStyle(warningBtnStyle));
         fixButton.setDisable(true);
 
-        exportButton = new Button("保存模板");
+        exportButton = new Button("保存样式模板");
         exportButton.setStyle(successBtnStyle);
         exportButton.setOnMouseEntered(e -> exportButton.setStyle(successBtnHover));
         exportButton.setOnMouseExited(e -> exportButton.setStyle(successBtnStyle));
@@ -205,7 +210,7 @@ public class ReportTemplateMakerWindow {
      */
     private void clearCacheDirectory() {
         try {
-            String cachePath = MiscUtils.getAbsolutePath(TEMPLATE_MAKER_CACHE_DIR);
+            String cachePath = MiscUtils.getAbsolutePath(WORKSPACE_CACHE_DIR);
             File cacheDir = new File(cachePath);
             if (cacheDir.exists()) {
                 FileUtils.cleanDirectory(cachePath);
@@ -230,7 +235,7 @@ public class ReportTemplateMakerWindow {
      */
     private void uploadFile() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("选择Word模板文件");
+        fileChooser.setTitle("选择Word样式模板文件");
 
         // 设置文件过滤器
         FileChooser.ExtensionFilter docFilter = new FileChooser.ExtensionFilter("Word文档 (*.doc, *.docx)", "*.doc", "*.docx");
@@ -245,7 +250,7 @@ public class ReportTemplateMakerWindow {
                 isProcessed = false;
                 fixButton.setDisable(true);
                 exportButton.setDisable(true);
-                uploadButton.setText("选择Word模板文件 (.doc/.docx)");
+                uploadButton.setText("选择Word样式模板 (.doc/.docx)");
                 updateStatus("等待上传文件...", 0);
                 logArea.clear();
             }
@@ -269,7 +274,7 @@ public class ReportTemplateMakerWindow {
                 templateName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
 
                 // 创建缓存目录
-                File cacheDir = new File(MiscUtils.getAbsolutePath(TEMPLATE_MAKER_CACHE_DIR));
+                File cacheDir = new File(MiscUtils.getAbsolutePath(WORKSPACE_CACHE_DIR));
                 if (!cacheDir.exists()) {
                     cacheDir.mkdirs();
                 }
@@ -471,7 +476,7 @@ public class ReportTemplateMakerWindow {
         }
 
         // 检查模板目录是否存在，如果存在则询问用户
-        File reportTemplateDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.REPORT_TEMPLATE_DIR));
+        File reportTemplateDir = new File(MiscUtils.getAbsolutePath(GlobalConfig.USER_TEMPLATE_DIR));
         if (!reportTemplateDir.exists()) {
             reportTemplateDir.mkdirs();
         }
@@ -486,8 +491,8 @@ public class ReportTemplateMakerWindow {
         if (saveDir.exists()) {
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("模板目录已存在");
-                alert.setHeaderText("模板目录 '" + templateName + "' 已存在");
+                alert.setTitle("样式模板已存在");
+                alert.setHeaderText("样式模板 '" + templateName + "' 已存在");
                 alert.setContentText("请选择操作：");
 
                 ButtonType overrideButton = new ButtonType("覆盖现有目录");
@@ -615,7 +620,7 @@ public class ReportTemplateMakerWindow {
                     isProcessed = false;
                     exportButton.setDisable(true);
                     fixButton.setDisable(true);
-                    uploadButton.setText("选择Word模板文件 (.doc/.docx)");
+                    uploadButton.setText("选择Word样式模板 (.doc/.docx)");
                     updateStatus("等待上传文件...", 0);
                 });
 
@@ -696,7 +701,7 @@ public class ReportTemplateMakerWindow {
      */
     public void show() {
         stage = new Stage();
-        stage.setTitle("报告模板制作工具");
+        stage.setTitle("Word报告样式制作工具");
         stage.setScene(new Scene(getView(), 600, 700));
         stage.setResizable(true);
         stage.setMinWidth(550);

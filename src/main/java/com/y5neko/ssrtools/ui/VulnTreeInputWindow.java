@@ -207,9 +207,8 @@ public class VulnTreeInputWindow {
 
         Scene scene = new Scene(root, 1200, 650);
 
-        // 简单直接的全局样式设置
-        String globalStyle = "*{-fx-focus-color: transparent; -fx-faint-focus-color: transparent;}";
-        scene.getStylesheets().add("data:text/css," + globalStyle);
+        // 使用根节点样式设置，避免全局选择器导致的资源警告
+        scene.getRoot().setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         // ScenicView.show(scene); // 临时注释掉调试工具，可能影响渲染
         stage.setScene(scene);

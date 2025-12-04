@@ -162,11 +162,11 @@ public class DocUtils {
         String path = docTemplatesPath != null ? docTemplatesPath :
                 MiscUtils.getAbsolutePath(DOC_TEMPLATE_PATH);
 
-        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
-        FileUtils.copyFolder(path, MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc");
+        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR));
+        FileUtils.copyFolder(path, MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc");
 
         FileUtils.overwrite(
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word/document.xml",
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/word/document.xml",
                 docContent,
                 StandardCharsets.UTF_8
         );
@@ -174,11 +174,11 @@ public class DocUtils {
         // 动态构建sources列表，只包含存在的路径
         List<String> sources = new ArrayList<>();
         String[] possibleSources = {
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/_rels",
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/customXml",
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/docProps",
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/word",
-                MiscUtils.getAbsolutePath(TEMP_DIR) + "/doc/[Content_Types].xml"
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/_rels",
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/customXml",
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/docProps",
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/word",
+                MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR) + "/doc/[Content_Types].xml"
         };
 
         for (String source : possibleSources) {
@@ -199,7 +199,7 @@ public class DocUtils {
                 ".docx";
 
         ZipUtils.zipMultiple(sources, reportPath);
-        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(TEMP_DIR));
+        FileUtils.cleanDirectory(MiscUtils.getAbsolutePath(WORKSPACE_TEMP_DIR));
 
         return reportPath;
     }

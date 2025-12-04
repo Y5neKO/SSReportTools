@@ -250,11 +250,11 @@ public class MainWindow {
         // 创建模板管理组件
         this.templateComboBox = new ComboBox<>();
         templateComboBox.setPrefWidth(150);
-        templateComboBox.setPromptText("选择报告模板");
+        templateComboBox.setPromptText("选择Word报告样式");
         templateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 8px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
 
-        // 删除模板按钮
-        Button deleteTemplateBtn = new Button("删除模板");
+        // 删除样式模板按钮
+        Button deleteTemplateBtn = new Button("删除样式");
         deleteTemplateBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 4px 8px; -fx-font-size: 10px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0;");
         deleteTemplateBtn.setOnAction(e -> deleteSelectedTemplate());
 
@@ -271,7 +271,7 @@ public class MainWindow {
         templateComboBox.setOnAction(e -> {
             String selectedTemplate = templateComboBox.getSelectionModel().getSelectedItem();
             if (selectedTemplate != null) {
-                currentTemplatePath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + selectedTemplate;
+                currentTemplatePath = GlobalConfig.USER_TEMPLATE_DIR + "/" + selectedTemplate;
                 LogUtils.info(MainWindow.class, "模板切换到: " + currentTemplatePath);
 
                 // 验证模板目录是否存在
@@ -286,14 +286,20 @@ public class MainWindow {
             }
         });
 
-        // 创建模板管理容器
-        HBox templateManageBox = new HBox(8, templateComboBox, deleteTemplateBtn);
+        // 创建Word报告样式管理容器 - 使用HBox水平排列，避免VBox导致的垂直拉伸
+        Label reportTemplateLabel = new Label("Word报告样式:");
+        reportTemplateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
+
+        HBox templateManageBox = new HBox(8, reportTemplateLabel, templateComboBox, deleteTemplateBtn);
         templateManageBox.setAlignment(Pos.CENTER_RIGHT);
 
-        // 创建包含漏洞统计和模板管理的容器
-        BorderPane rowContainer = new BorderPane();
-        rowContainer.setLeft(vulnBox);
-        rowContainer.setRight(templateManageBox);
+        // 创建一个弹性空间，用于撑开布局
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        // 创建包含漏洞统计和模板管理的容器，使用HBox而不是BorderPane
+        HBox rowContainer = new HBox(15, vulnBox, spacer, templateManageBox);
+        rowContainer.setAlignment(Pos.CENTER); // 整体居中对齐
 
         grid.addRow(row++, vulnLabel, rowContainer);
 
@@ -522,7 +528,7 @@ public class MainWindow {
 
         // =================================== 自适应 + 滚动封装 ====================================
 
-        mainVBox = new VBox(8);  // 间距8
+        mainVBox = new VBox(12);  // 间距12
         mainVBox.setPadding(new Insets(12));
         mainVBox.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 6px;");
         // 先初始化模板UI控件
@@ -664,8 +670,8 @@ public class MainWindow {
      * 初始化模板UI
      */
     private void initTemplateUI() {
-        // 模板区域标题
-        Label templateTitle = new Label("报告模板管理");
+        // 客户配置区域标题
+        Label templateTitle = new Label("客户配置管理");
         templateTitle.setStyle("-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #2d3436;");
 
         HBox templateBox = new HBox(8);
@@ -673,18 +679,18 @@ public class MainWindow {
         templateBox.setPadding(new Insets(6, 0, 5, 0));
         templateBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 5px; -fx-background-radius: 5px; -fx-padding: 8px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
-        Label templateLabel = new Label("选择模板：");
+        Label templateLabel = new Label("选择客户配置：");
         templateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
         customerTemplateComboBox = new ComboBox<>();
-        customerTemplateComboBox.setPromptText("选择客户模板");
+        customerTemplateComboBox.setPromptText("选择客户配置");
         customerTemplateComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
 
-        Label nameLabel = new Label("模板名称：");
+        Label nameLabel = new Label("配置名称：");
         nameLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #636e72;");
 
         templateNameField = new TextField();
-        templateNameField.setPromptText("输入模板名称");
+        templateNameField.setPromptText("输入配置名称");
         templateNameField.setStyle("-fx-font-size: 11px; -fx-padding: 4px 6px; -fx-border-radius: 4px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-background-color: white;");
 
         // 模板按钮样式
@@ -694,14 +700,14 @@ public class MainWindow {
         String deleteBtnStyle = "-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.2), 2, 0, 0, 1);";
         String deleteBtnHover = "-fx-background-color: #ee5a52; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 3px; -fx-padding: 4px 8px; -fx-font-size: 9px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(255, 107, 107, 0.4), 3, 0, 0, 1);";
 
-        saveTemplateButton = new Button("保存模板");
+        saveTemplateButton = new Button("保存配置");
         saveTemplateButton.setStyle(saveBtnStyle);
         saveTemplateButton.setOnMouseEntered(e -> saveTemplateButton.setStyle(saveBtnHover));
         saveTemplateButton.setOnMouseExited(e -> saveTemplateButton.setStyle(saveBtnStyle));
 
-        deleteTemplateButton = new Button("删除模板");
+        deleteTemplateButton = new Button("删除配置");
         deleteTemplateButton.setStyle(deleteBtnStyle);
-        deleteTemplateButton.setDisable(true); // 默认禁用，没选中模板时不可用
+        deleteTemplateButton.setDisable(true); // 默认禁用，没选中配置时不可用
         deleteTemplateButton.setOnMouseEntered(e -> {
             if (!deleteTemplateButton.isDisabled()) {
                 deleteTemplateButton.setStyle(deleteBtnHover);
@@ -713,10 +719,23 @@ public class MainWindow {
             }
         });
 
-        templateBox.getChildren().addAll(templateLabel, customerTemplateComboBox, nameLabel, templateNameField, saveTemplateButton, deleteTemplateButton);
+        // 创建选择区域和保存区域
+        HBox selectBox = new HBox(8, templateLabel, customerTemplateComboBox);
+        HBox nameBox = new HBox(8, nameLabel, templateNameField);
+        HBox buttonBox = new HBox(8, saveTemplateButton, deleteTemplateButton);
 
-        // 将模板标题和容器添加到主界面
-        VBox templateContainer = new VBox(6, templateTitle, templateBox);
+        selectBox.setAlignment(Pos.CENTER_LEFT);
+        nameBox.setAlignment(Pos.CENTER_LEFT);
+        buttonBox.setAlignment(Pos.CENTER_LEFT);
+
+        templateBox.getChildren().addAll(selectBox, nameBox, buttonBox);
+
+        // 添加说明文本
+        Label templateDescLabel = new Label("保存和管理客户信息配置，包含客户名称、项目经理等基本信息");
+        templateDescLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: #95a5a6; -fx-padding: 0 0 4px 0;");
+
+        // 将客户配置标题和容器添加到主界面
+        VBox templateContainer = new VBox(6, templateTitle, templateDescLabel, templateBox);
         mainVBox.getChildren().add(0, templateContainer);
 
         // 加载模板列表
@@ -973,7 +992,7 @@ public class MainWindow {
     private void refreshTemplateList(ComboBox<String> comboBox) {
         comboBox.getItems().clear();
 
-        String templateDir = GlobalConfig.REPORT_TEMPLATE_DIR;
+        String templateDir = GlobalConfig.USER_TEMPLATE_DIR;
         File dir = new File(MiscUtils.getAbsolutePath(templateDir));
 
         if (dir.exists() && dir.isDirectory()) {
@@ -992,7 +1011,7 @@ public class MainWindow {
                         comboBox.getItems().add(templateDirItem.getName());
 
                         // 如果是当前选中的模板，设置选中状态
-                        String expectedPath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + templateDirItem.getName();
+                        String expectedPath = GlobalConfig.USER_TEMPLATE_DIR + "/" + templateDirItem.getName();
                         if (expectedPath.equals(currentTemplatePath)) {
                             comboBox.getSelectionModel().select(templateDirItem.getName());
                         }
@@ -1032,7 +1051,7 @@ public class MainWindow {
 
         if (result.isPresent() && result.get() == confirmButton) {
             try {
-                String templatePath = GlobalConfig.REPORT_TEMPLATE_DIR + "/" + selectedTemplate;
+                String templatePath = GlobalConfig.USER_TEMPLATE_DIR + "/" + selectedTemplate;
                 File templateDir = new File(MiscUtils.getAbsolutePath(templatePath));
 
                 if (templateDir.exists() && templateDir.isDirectory()) {

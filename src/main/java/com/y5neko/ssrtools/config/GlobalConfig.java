@@ -4,29 +4,145 @@ import java.io.File;
 
 /**
  * 全局配置类
+ * 统一管理SSReportTools项目的所有路径常量和配置参数
  */
 public class GlobalConfig {
-    public static final String COMPANY_TEMPLATE_DIR = "config/templates";
-    public static final String REPORT_TEMPLATE_DIR = "created_templates";
-    public static final String TEMPLATE_MAKER_CACHE_DIR = "template_maker_cache";
-    public static final String VULN_TREE_PATH = "config/vuln_tree.json";
-    public static final String VULN_WIKI_FILE_PATH = "config/VulnWiki.yml";
-    public static final String DOC_TEMPLATE_PATH = "templates/渗透测试报告模板";
-    public static final String TEMP_DIR = "temp";
+    // ==================== 配置文件路径 ====================
+    /**
+     * 配置文件根目录，存放所有模板、组件和配置文件
+     */
+    public static final String CONFIG_DIR = "config";
+
+    /**
+     * 客户配置模板目录，存放客户信息、项目信息的JSON模板文件
+     */
+    public static final String COMPANY_TEMPLATE_DIR = CONFIG_DIR + File.separator + "customer-templates";
+
+    /**
+     * 漏洞树数据文件，存储已录入的漏洞层级结构数据
+     */
+    public static final String VULN_TREE_PATH = CONFIG_DIR + File.separator + "vuln_tree.json";
+
+    /**
+     * 漏洞知识库文件，基于YAML格式的漏洞详细信息库
+     */
+    public static final String VULN_WIKI_FILE_PATH = CONFIG_DIR + File.separator + "VulnWiki.yml";
+
+    // ==================== 模板相关路径 ====================
+    /**
+     * 报告样式模板根目录，存放Word报告的样式模板
+     */
+    public static final String TEMPLATES_ROOT = CONFIG_DIR + File.separator + "report_templates";
+
+    /**
+     * 默认样式模板目录，存放系统内置的Word报告样式模板
+     */
+    public static final String DEFAULT_TEMPLATE_DIR = TEMPLATES_ROOT + File.separator + "default-styles";
+
+    /**
+     * 用户自定义样式模板目录，存放用户创建的Word报告样式模板
+     */
+    public static final String USER_TEMPLATE_DIR = TEMPLATES_ROOT + File.separator + "user-styles";
+
+    /**
+     * 当前使用的文档模板路径，默认指向默认样式模板
+     */
+    public static final String DOC_TEMPLATE_PATH = DEFAULT_TEMPLATE_DIR; // 保持向后兼容
+
+    // ==================== 工作空间路径 ====================
+    /**
+     * 工作空间根目录，存放程序运行时的临时文件和缓存
+     */
+    public static final String WORKSPACE_DIR = "workspace";
+
+    /**
+     * 临时文件目录，存放报告生成过程中的临时文件
+     */
+    public static final String WORKSPACE_TEMP_DIR = WORKSPACE_DIR + File.separator + "temp";
+
+    /**
+     * 缓存目录，存放程序运行时产生的缓存数据
+     */
+    public static final String WORKSPACE_CACHE_DIR = WORKSPACE_DIR + File.separator + "cache";
+
+    /**
+     * 导出目录，存放待导出的文件和数据
+     */
+    public static final String WORKSPACE_EXPORTS_DIR = WORKSPACE_DIR + File.separator + "exports";
+
+    // ==================== 输出和组件路径 ====================
+    /**
+     * 文档输出目录，存放最终生成的报告文件（.docx格式）
+     */
     public static final String DOC_OUTPUT_DIR = "docs";
 
-    // 文档组件路径
-    public static final String DOC_COMPONENTS_PATH = "components";
-    public static final String FIRST_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator +  "first_level_heading.txt";
-    public static final String SECOND_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "second_level_heading.txt";
-    public static final String THIRD_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "third_level_heading.txt";
-    public static final String FOURTH_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "fourth_level_heading.txt";
-    public static final String NORMAL_TEXT_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "normal_text.txt";
+    /**
+     * 报告组件模板目录，存放各级标题和正文的文本模板组件
+     */
+    public static final String DOC_COMPONENTS_PATH = CONFIG_DIR + File.separator + "report_components";
 
-    // 必须存在的目录
+    // ==================== 文档组件模板路径 ====================
+    /**
+     * 一级标题模板文件，用于生成报告的主要章节标题
+     */
+    public static final String FIRST_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.separator + "first_level_heading.txt";
+
+    /**
+     * 二级标题模板文件，用于生成报告的子章节标题
+     */
+    public static final String SECOND_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.separator + "second_level_heading.txt";
+
+    /**
+     * 三级标题模板文件，用于生成漏洞名称等三级标题
+     */
+    public static final String THIRD_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.separator + "third_level_heading.txt";
+
+    /**
+     * 四级标题模板文件，用于生成漏洞描述、修复建议等四级标题
+     */
+    public static final String FOURTH_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.separator + "fourth_level_heading.txt";
+
+    /**
+     * 正文文本模板文件，用于生成报告的普通文本内容
+     */
+    public static final String NORMAL_TEXT_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.separator + "normal_text.txt";
+
+    // ==================== 兼容性路径（保持向后兼容） ====================
+    /**
+     * @deprecated 使用 {@link #USER_TEMPLATE_DIR} 替代
+     * 保留此常量以确保向后兼容性
+     */
+    @Deprecated
+    public static final String REPORT_TEMPLATE_DIR = USER_TEMPLATE_DIR;
+
+    /**
+     * @deprecated 使用 {@link #WORKSPACE_CACHE_DIR} 替代
+     * 保留此常量以确保向后兼容性
+     */
+    @Deprecated
+    public static final String TEMPLATE_MAKER_CACHE_DIR = WORKSPACE_CACHE_DIR;
+
+    /**
+     * @deprecated 使用 {@link #WORKSPACE_TEMP_DIR} 替代
+     * 保留此常量以确保向后兼容性
+     */
+    @Deprecated
+    public static final String TEMP_DIR = WORKSPACE_TEMP_DIR;
+
+    // ==================== 必须存在的目录 ====================
+    /**
+     * 程序运行时必须创建的目录列表
+     * 程序启动时会自动检查并创建这些目录，确保正常运行
+     */
     public static final String[] REQUIRED_DIRS = {
-            TEMP_DIR,
-            DOC_OUTPUT_DIR,
-            REPORT_TEMPLATE_DIR
+            CONFIG_DIR,                    // 配置文件根目录
+            WORKSPACE_DIR,                 // 工作空间根目录
+            WORKSPACE_TEMP_DIR,            // 临时文件目录
+            WORKSPACE_CACHE_DIR,           // 缓存目录
+            WORKSPACE_EXPORTS_DIR,         // 导出目录
+            DOC_OUTPUT_DIR,                // 文档输出目录
+            DEFAULT_TEMPLATE_DIR,          // 默认样式模板目录
+            USER_TEMPLATE_DIR,             // 用户自定义样式目录
+            DOC_COMPONENTS_PATH            // 报告组件模板目录
     };
 }
