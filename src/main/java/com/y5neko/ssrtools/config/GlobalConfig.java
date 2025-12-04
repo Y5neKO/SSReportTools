@@ -1,5 +1,7 @@
 package com.y5neko.ssrtools.config;
 
+import java.io.File;
+
 /**
  * 全局配置类
  */
@@ -13,12 +15,15 @@ public class GlobalConfig {
     public static final String TEMP_DIR = "temp";
     public static final String DOC_OUTPUT_DIR = "docs";
 
-    public static final String FIRST_LEVEL_HEADING_TEPMLATE_PATH = "components/first_level_heading.txt";
-    public static final String SECOND_LEVEL_HEADING_TEPMLATE_PATH = "components/second_level_heading.txt";
-    public static final String THIRD_LEVEL_HEADING_TEPMLATE_PATH = "components/third_level_heading.txt";
-    public static final String FOURTH_LEVEL_HEADING_TEPMLATE_PATH = "components/fourth_level_heading.txt";
-    public static final String NORMAL_TEXT_TEPMLATE_PATH = "components/normal_text.txt";
+    // 文档组件路径
+    public static final String DOC_COMPONENTS_PATH = "components";
+    public static final String FIRST_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator +  "first_level_heading.txt";
+    public static final String SECOND_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "second_level_heading.txt";
+    public static final String THIRD_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "third_level_heading.txt";
+    public static final String FOURTH_LEVEL_HEADING_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "fourth_level_heading.txt";
+    public static final String NORMAL_TEXT_TEPMLATE_PATH = DOC_COMPONENTS_PATH + File.pathSeparator + "normal_text.txt";
 
+    // 必须存在的目录
     public static final String[] REQUIRED_DIRS = {
             TEMP_DIR,
             DOC_OUTPUT_DIR,

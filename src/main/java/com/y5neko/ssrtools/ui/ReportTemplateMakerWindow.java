@@ -121,7 +121,7 @@ public class ReportTemplateMakerWindow {
         uploadBox.setPadding(new Insets(15));
         uploadBox.setStyle("-fx-background-color: white; -fx-border-radius: 8px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
 
-        Label uploadTitle = new Label("📁 文件上传");
+        Label uploadTitle = new Label("文件上传");
         uploadTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
         uploadBox.getChildren().add(uploadTitle);
 
@@ -142,13 +142,13 @@ public class ReportTemplateMakerWindow {
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setPadding(new Insets(10, 0, 10, 0));
 
-        fixButton = new Button("🔧 修复占位符");
+        fixButton = new Button("修复占位符");
         fixButton.setStyle(warningBtnStyle);
         fixButton.setOnMouseEntered(e -> fixButton.setStyle(warningBtnHover));
         fixButton.setOnMouseExited(e -> fixButton.setStyle(warningBtnStyle));
         fixButton.setDisable(true);
 
-        exportButton = new Button("💾 保存模板");
+        exportButton = new Button("保存模板");
         exportButton.setStyle(successBtnStyle);
         exportButton.setOnMouseEntered(e -> exportButton.setStyle(successBtnHover));
         exportButton.setOnMouseExited(e -> exportButton.setStyle(successBtnStyle));
@@ -187,7 +187,7 @@ public class ReportTemplateMakerWindow {
         logBox.setStyle("-fx-background-color: white; -fx-border-radius: 8px; -fx-border-color: #dfe6e9; -fx-border-width: 1px;");
         logBox.setMinHeight(200);
 
-        Label logTitle = new Label("📝 操作日志");
+        Label logTitle = new Label("操作日志");
         logTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2d3436;");
         logBox.getChildren().add(logTitle);
 
@@ -245,7 +245,7 @@ public class ReportTemplateMakerWindow {
                 isProcessed = false;
                 fixButton.setDisable(true);
                 exportButton.setDisable(true);
-                uploadButton.setText("📁 选择Word模板文件 (.doc/.docx)");
+                uploadButton.setText("选择Word模板文件 (.doc/.docx)");
                 updateStatus("等待上传文件...", 0);
                 logArea.clear();
             }
@@ -332,7 +332,7 @@ public class ReportTemplateMakerWindow {
 
                     // 启用修复按钮
                     fixButton.setDisable(false);
-                    uploadButton.setText("📁 重新选择文件");
+                    uploadButton.setText("重新选择文件");
                 });
 
             } catch (Exception e) {
@@ -615,7 +615,7 @@ public class ReportTemplateMakerWindow {
                     isProcessed = false;
                     exportButton.setDisable(true);
                     fixButton.setDisable(true);
-                    uploadButton.setText("📁 选择Word模板文件 (.doc/.docx)");
+                    uploadButton.setText("选择Word模板文件 (.doc/.docx)");
                     updateStatus("等待上传文件...", 0);
                 });
 
