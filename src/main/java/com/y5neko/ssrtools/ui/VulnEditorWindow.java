@@ -51,6 +51,7 @@ public class VulnEditorWindow {
     private Button btnLoad;
     private Button btnOverwrite;
     private Button btnExport;
+    private Button btnAIGenerate;  // AI辅助生成按钮
 
     /**
      * 构造函数
@@ -113,6 +114,7 @@ public class VulnEditorWindow {
         btnLoad = new Button("加载 YAML");
         btnOverwrite = new Button("保存 YAML");
         btnExport = new Button("另存为 YAML");
+        btnAIGenerate = new Button("AI辅助生成");  // AI辅助生成按钮
 
         // 应用按钮样式
         applyButtonStyles();
@@ -138,6 +140,10 @@ public class VulnEditorWindow {
         String secondaryBtnStyle = "-fx-background-color: #74b9ff; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.2), 4, 0, 0, 1);";
         String secondaryBtnHover = "-fx-background-color: #5ba3f5; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(116, 185, 255, 0.4), 6, 0, 0, 2);";
 
+        // AI按钮样式 - 紫色渐变，突出AI功能
+        String aiBtnStyle = "-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.3), 4, 0, 0, 1);";
+        String aiBtnHover = "-fx-background-color: linear-gradient(to right, #5a6fd6, #6a4192); -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 6px; -fx-padding: 8px 14px; -fx-font-size: 12px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(102, 126, 234, 0.5), 6, 0, 0, 2);";
+
         // 应用到按钮
         btnNew.setStyle(primaryBtnStyle);
         btnSave.setStyle(successBtnStyle);
@@ -145,6 +151,7 @@ public class VulnEditorWindow {
         btnLoad.setStyle(secondaryBtnStyle);
         btnOverwrite.setStyle(successBtnStyle);
         btnExport.setStyle(secondaryBtnStyle);
+        btnAIGenerate.setStyle(aiBtnStyle);
 
         // 添加悬停效果
         addHoverEffect(btnNew, primaryBtnStyle, primaryBtnHover);
@@ -153,6 +160,7 @@ public class VulnEditorWindow {
         addHoverEffect(btnLoad, secondaryBtnStyle, secondaryBtnHover);
         addHoverEffect(btnOverwrite, successBtnStyle, successBtnHover);
         addHoverEffect(btnExport, secondaryBtnStyle, secondaryBtnHover);
+        addHoverEffect(btnAIGenerate, aiBtnStyle, aiBtnHover);
     }
 
     /**
@@ -252,6 +260,12 @@ public class VulnEditorWindow {
         primaryButtons.setPadding(new Insets(10, 0, 8, 0));
         primaryButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
+        // 创建AI辅助按钮行（单独一行，突出显示）
+        HBox aiButtons = new HBox(8, btnAIGenerate);
+        aiButtons.setAlignment(Pos.CENTER);
+        aiButtons.setPadding(new Insets(0, 0, 8, 0));
+        aiButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
         // 创建文件操作按钮行
         HBox fileButtons = new HBox(8, btnLoad, btnOverwrite, btnExport);
         fileButtons.setAlignment(Pos.CENTER);
@@ -270,6 +284,7 @@ public class VulnEditorWindow {
                 descLabel, descArea,
                 suggestLabel, suggestArea,
                 primaryButtons,
+                aiButtons,
                 fileButtons
         );
 
@@ -326,6 +341,34 @@ public class VulnEditorWindow {
             onSave();
             onOverwriteYaml();
         });
+        btnAIGenerate.setOnAction(e -> onAIGenerate());
+    }
+
+    /**
+     * AI辅助生成按钮点击事件
+     */
+    private void onAIGenerate() {
+        // 获取当前漏洞名称
+        String currentVulnName = nameField.getText().trim();
+
+        // 创建AI辅助生成窗口，传入当前漏洞名称和回调接口
+        VulnAIGeneratorWindow aiWindow = new VulnAIGeneratorWindow(currentVulnName, new VulnAIGeneratorWindow.VulnAIResultCallback() {
+            @Override
+            public void onApplyResult(String vulnName, String harm, String riskLevel, String description, String suggestion) {
+                // 在UI线程中更新表单字段
+                javafx.application.Platform.runLater(() -> {
+                    nameField.setText(vulnName);  // 同步漏洞名称
+                    harmArea.setText(harm);
+                    riskField.setText(riskLevel);
+                    descArea.setText(description);
+                    suggestArea.setText(suggestion);
+                    LogUtils.info(VulnEditorWindow.class, "已应用AI生成的漏洞信息");
+                });
+            }
+        });
+
+        // 显示窗口
+        aiWindow.show();
     }
 
     /**

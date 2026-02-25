@@ -4,7 +4,7 @@ package com.y5neko.ssrtools.config;
  * 版权信息
  */
 public class CopyRight {
-    public static final String VERSION = "2.0.0";
+    public static final String VERSION = "2.1.0";
 
     public static final String COPYRIGHT = "SSReportTools - 安服/渗透测试 报告生成工具\n" +
             "Copyright (c) 2025 Y5neKO\n" +
