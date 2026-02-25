@@ -65,6 +65,17 @@ public class GlobalConfig {
      */
     public static final String USER_COMPONENTS_DIR = COMPONENTS_ROOT + File.separator + "user-components";
 
+    // ==================== AI配置相关路径 ====================
+    /**
+     * AI配置文件目录，存放AI端点配置JSON文件
+     */
+    public static final String AI_CONFIG_DIR = CONFIG_DIR + File.separator + "ai-configs";
+
+    /**
+     * AI配置文件路径，默认配置文件
+     */
+    public static final String AI_CONFIG_FILE = AI_CONFIG_DIR + File.separator + "ai_endpoints.json";
+
     // ==================== 工作空间路径 ====================
     /**
      * 工作空间根目录，存放程序运行时的临时文件和缓存
@@ -152,6 +163,7 @@ public class GlobalConfig {
      */
     public static final String[] REQUIRED_DIRS = {
             CONFIG_DIR,                    // 配置文件根目录
+            AI_CONFIG_DIR,                 // AI配置文件目录
             WORKSPACE_DIR,                 // 工作空间根目录
             WORKSPACE_TEMP_DIR,            // 临时文件目录
             WORKSPACE_CACHE_DIR,           // 缓存目录

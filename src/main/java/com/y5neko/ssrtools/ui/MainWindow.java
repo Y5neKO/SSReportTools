@@ -85,6 +85,9 @@ public class MainWindow {
     // 漏洞库编辑按钮
     private VulnEditorWindow vuLnEditorWindow;
 
+    // AI配置窗口
+    private AIConfigWindow aiConfigWindow;
+
     /**
      * 构造函数
      */
@@ -339,10 +342,19 @@ public class MainWindow {
         generateReportBtn.setOnMouseEntered(e -> generateReportBtn.setStyle(successBtnHover));
         generateReportBtn.setOnMouseExited(e -> generateReportBtn.setStyle(successBtnStyle));
 
+        // AI配置按钮样式
+        String aiConfigBtnStyle = "-fx-background-color: #a55eea; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(165, 94, 234, 0.2), 3, 0, 0, 1);";
+        String aiConfigBtnHover = "-fx-background-color: #8854d0; -fx-text-fill: white; -fx-font-weight: 600; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-font-size: 11px; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-color: transparent; -fx-background-insets: 0; -fx-effect: dropshadow(gaussian, rgba(165, 94, 234, 0.4), 4, 0, 0, 1);";
+
         Button openVulnEditorBtn = new Button("漏洞库编辑器");
         openVulnEditorBtn.setStyle(secondaryBtnStyle);
         openVulnEditorBtn.setOnMouseEntered(e -> openVulnEditorBtn.setStyle(secondaryBtnHover));
         openVulnEditorBtn.setOnMouseExited(e -> openVulnEditorBtn.setStyle(secondaryBtnStyle));
+
+        Button aiConfigBtn = new Button("AI配置");
+        aiConfigBtn.setStyle(aiConfigBtnStyle);
+        aiConfigBtn.setOnMouseEntered(e -> aiConfigBtn.setStyle(aiConfigBtnHover));
+        aiConfigBtn.setOnMouseExited(e -> aiConfigBtn.setStyle(aiConfigBtnStyle));
         // 居中逻辑在最底部
         // ================================================================================
 
@@ -576,13 +588,23 @@ public class MainWindow {
             vuLnEditorWindow.show();
         });
 
+        aiConfigBtn.setOnAction(e -> {
+            try {
+                aiConfigWindow = new AIConfigWindow();
+                aiConfigWindow.show();
+            } catch (Exception ex) {
+                LogUtils.error(MainWindow.class, "打开AI配置窗口失败", ex);
+                showAlert("错误", "打开AI配置窗口失败: " + ex.getMessage());
+            }
+        });
+
         addVulnBtn.setOnAction(e -> {
             VulnTreeInputWindow vulnTreeInputWindow = new VulnTreeInputWindow();
             vulnTreeInputWindow.show();
         });
 
         // 右侧其他按钮容器
-        HBox rightButtonsHBox = new HBox(10, openVulnEditorBtn, addVulnBtn, generateReportBtn);
+        HBox rightButtonsHBox = new HBox(10, aiConfigBtn, openVulnEditorBtn, addVulnBtn, generateReportBtn);
         rightButtonsHBox.setAlignment(Pos.CENTER_RIGHT);
         rightButtonsHBox.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
