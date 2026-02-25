@@ -16,6 +16,8 @@ public class AIEndpointConfig {
     private boolean isEnabled;        // 是否启用
     private Integer maxTokens;        // 最大token数
     private Double temperature;       // 温度参数
+    private Integer connectTimeout;   // 连接超时（秒）
+    private Integer readTimeout;      // 读取超时（秒）
 
     /**
      * 默认构造函数
@@ -25,6 +27,8 @@ public class AIEndpointConfig {
         this.isEnabled = true;
         this.maxTokens = 2000;
         this.temperature = 0.7;
+        this.connectTimeout = 30;     // 默认30秒
+        this.readTimeout = 60;        // 默认60秒
     }
 
     /**
@@ -108,5 +112,35 @@ public class AIEndpointConfig {
 
     public void setTemperature(Double temperature) {
         this.temperature = temperature;
+    }
+
+    public Integer getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(Integer connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public Integer getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(Integer readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * 获取连接超时（毫秒）
+     */
+    public int getConnectTimeoutMs() {
+        return connectTimeout != null ? connectTimeout * 1000 : 30000;
+    }
+
+    /**
+     * 获取读取超时（毫秒）
+     */
+    public int getReadTimeoutMs() {
+        return readTimeout != null ? readTimeout * 1000 : 60000;
     }
 }

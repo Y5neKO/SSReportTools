@@ -128,7 +128,7 @@ public class AIService {
      * @throws AIServiceException 请求失败时抛出
      */
     public static AIChatResponse chat(AIChatRequest request, AIEndpointConfig config) throws AIServiceException {
-        return chat(request, config, CONNECT_TIMEOUT, READ_TIMEOUT);
+        return chat(request, config, config.getConnectTimeoutMs(), config.getReadTimeoutMs());
     }
 
     /**
@@ -250,9 +250,7 @@ public class AIService {
                 return "连接失败: " + response.getError().getMessage();
             }
 
-            return "连接成功! " +
-                   (response.getUsage() != null ?
-                           "(Token: " + response.getUsage().getTotalTokens() + ")" : "");
+            return "连接成功!";
         } catch (AIServiceException e) {
             // 处理超时等异常
             String msg = e.getMessage();

@@ -55,6 +55,8 @@ public class AIConfigWindow {
     private TextField providerField;
     private TextField maxTokensField;
     private TextField temperatureField;
+    private TextField connectTimeoutField;  // 连接超时（秒）
+    private TextField readTimeoutField;     // 读取超时（秒）
 
     // 按钮
     private Button btnNew;
@@ -180,7 +182,7 @@ public class AIConfigWindow {
         // 初始化预设端点下拉框
         presetComboBox = new ComboBox<>();
         presetComboBox.setPromptText("选择预设端点或自定义");
-        presetComboBox.setStyle("-fx-font-size: 12px; -fx-padding: 6px 8px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        presetComboBox.setStyle("-fx-font-size: 11px; -fx-padding: 2px 6px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         // 添加预设端点选项
         ObservableList<PresetEndpoint> presets = FXCollections.observableArrayList(
@@ -228,6 +230,14 @@ public class AIConfigWindow {
         temperatureField = new TextField();
         temperatureField.setPromptText("0.7");
         temperatureField.setStyle("-fx-font-size: 12px; -fx-padding: 6px 8px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        connectTimeoutField = new TextField();
+        connectTimeoutField.setPromptText("30");
+        connectTimeoutField.setStyle("-fx-font-size: 12px; -fx-padding: 6px 8px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+
+        readTimeoutField = new TextField();
+        readTimeoutField.setPromptText("60");
+        readTimeoutField.setStyle("-fx-font-size: 12px; -fx-padding: 6px 8px; -fx-border-radius: 6px; -fx-border-color: #dfe6e9; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         // 初始化按钮
         btnNew = new Button("新增配置");
@@ -360,10 +370,6 @@ public class AIConfigWindow {
         // 创建字段标签样式
         String labelStyle = "-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #636e72;";
 
-        // 预设端点选择器标签
-        Label presetLabel = new Label("预设端点");
-        presetLabel.setStyle(labelStyle);
-
         Label nameLabel = new Label("配置名称");
         nameLabel.setStyle(labelStyle);
 
@@ -386,23 +392,23 @@ public class AIConfigWindow {
         Label temperatureLabel = new Label("温度");
         temperatureLabel.setStyle(labelStyle);
 
+        Label connectTimeoutLabel = new Label("连接超时(秒)");
+        connectTimeoutLabel.setStyle(labelStyle);
+
+        Label readTimeoutLabel = new Label("读取超时(秒)");
+        readTimeoutLabel.setStyle(labelStyle);
+
         // 创建主要操作按钮行
         HBox primaryButtons = new HBox(6, btnNew, btnSave, btnDelete);
         primaryButtons.setAlignment(Pos.CENTER);
         primaryButtons.setPadding(new Insets(6, 0, 4, 0));
         primaryButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
-        // 创建文件操作按钮行
-        HBox fileButtons = new HBox(6, btnImport, btnExport);
-        fileButtons.setAlignment(Pos.CENTER);
-        fileButtons.setPadding(new Insets(0, 0, 4, 0));
-        fileButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
-
-        // 创建测试按钮行
-        HBox testButtonRow = new HBox(6, btnTest);
-        testButtonRow.setAlignment(Pos.CENTER);
-        testButtonRow.setPadding(new Insets(0, 0, 6, 0));
-        testButtonRow.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
+        // 创建文件操作和测试按钮行
+        HBox secondaryButtons = new HBox(6, btnImport, btnExport, btnTest);
+        secondaryButtons.setAlignment(Pos.CENTER);
+        secondaryButtons.setPadding(new Insets(0, 0, 6, 0));
+        secondaryButtons.setStyle("-fx-focus-color: transparent; -fx-faint-focus-color: transparent;");
 
         // 创建表单容器 - 使用更紧凑的间距
         VBox form = new VBox(5);
@@ -410,7 +416,7 @@ public class AIConfigWindow {
         form.setStyle("-fx-background-color: white; -fx-border-color: #dfe6e9; -fx-border-radius: 10px; -fx-background-radius: 10px;");
         form.getChildren().addAll(
                 formTitle,
-                presetLabel, presetComboBox,
+                presetComboBox,
                 nameLabel, nameField,
                 endpointLabel, endpointField,
                 apiKeyLabel, apiKeyField,
@@ -418,9 +424,10 @@ public class AIConfigWindow {
                 providerLabel, providerField,
                 maxTokensLabel, maxTokensField,
                 temperatureLabel, temperatureField,
+                connectTimeoutLabel, connectTimeoutField,
+                readTimeoutLabel, readTimeoutField,
                 primaryButtons,
-                fileButtons,
-                testButtonRow
+                secondaryButtons
         );
 
         form.setPrefWidth(400);
@@ -476,6 +483,8 @@ public class AIConfigWindow {
             providerField.setText(selected.getProvider());
             maxTokensField.setText(selected.getMaxTokens() != null ? selected.getMaxTokens().toString() : "2000");
             temperatureField.setText(selected.getTemperature() != null ? selected.getTemperature().toString() : "0.7");
+            connectTimeoutField.setText(selected.getConnectTimeout() != null ? selected.getConnectTimeout().toString() : "30");
+            readTimeoutField.setText(selected.getReadTimeout() != null ? selected.getReadTimeout().toString() : "60");
         }
     }
 
@@ -537,6 +546,35 @@ public class AIConfigWindow {
             return;
         }
 
+        // 解析超时参数
+        Integer connectTimeout = 30;
+        try {
+            if (!connectTimeoutField.getText().trim().isEmpty()) {
+                connectTimeout = Integer.parseInt(connectTimeoutField.getText().trim());
+                if (connectTimeout < 1 || connectTimeout > 300) {
+                    showErrorAlert("连接超时必须在1-300秒之间");
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            showErrorAlert("连接超时必须是数字");
+            return;
+        }
+
+        Integer readTimeout = 60;
+        try {
+            if (!readTimeoutField.getText().trim().isEmpty()) {
+                readTimeout = Integer.parseInt(readTimeoutField.getText().trim());
+                if (readTimeout < 1 || readTimeout > 600) {
+                    showErrorAlert("读取超时必须在1-600秒之间");
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            showErrorAlert("读取超时必须是数字");
+            return;
+        }
+
         // 获取当前选中的配置（用于判断是否为编辑模式）
         AIEndpointConfig selected = table.getSelectionModel().getSelectedItem();
 
@@ -549,6 +587,8 @@ public class AIConfigWindow {
         config.setProvider(providerField.getText().trim());
         config.setMaxTokens(maxTokens);
         config.setTemperature(temperature);
+        config.setConnectTimeout(connectTimeout);
+        config.setReadTimeout(readTimeout);
 
         // 编辑模式：保持原有启用状态；新增模式：默认不启用
         boolean isEnabled;
@@ -732,6 +772,25 @@ public class AIConfigWindow {
             return;
         }
 
+        // 解析超时参数
+        Integer connectTimeout = 30;
+        try {
+            if (!connectTimeoutField.getText().trim().isEmpty()) {
+                connectTimeout = Integer.parseInt(connectTimeoutField.getText().trim());
+            }
+        } catch (NumberFormatException e) {
+            // 使用默认值
+        }
+
+        Integer readTimeout = 60;
+        try {
+            if (!readTimeoutField.getText().trim().isEmpty()) {
+                readTimeout = Integer.parseInt(readTimeoutField.getText().trim());
+            }
+        } catch (NumberFormatException e) {
+            // 使用默认值
+        }
+
         // 创建测试配置
         AIEndpointConfig testConfig = new AIEndpointConfig();
         testConfig.setEndpoint(endpoint);
@@ -739,20 +798,28 @@ public class AIConfigWindow {
         testConfig.setModel(model);
         testConfig.setMaxTokens(maxTokens);
         testConfig.setTemperature(temperature);
+        testConfig.setConnectTimeout(connectTimeout);
+        testConfig.setReadTimeout(readTimeout);
 
-        // 显示测试中的提示
-        Alert progressAlert = new Alert(Alert.AlertType.INFORMATION);
-        progressAlert.setTitle("测试连接");
-        progressAlert.setHeaderText(null);
-        progressAlert.setContentText("正在测试连接，请稍候...");
-        progressAlert.showAndWait();
+        // 保存原始按钮状态
+        String originalText = btnTest.getText();
+        boolean originalDisabled = btnTest.isDisabled();
 
-        // 在后台线程执行测试
+        // 更新按钮状态为"测试中..."
+        btnTest.setText("测试中...");
+        btnTest.setDisable(true);
+
+        // 立即在后台线程执行测试
         new Thread(() -> {
             String result = AIService.testConnection(testConfig);
 
-            // 在UI线程显示结果
+            // 在UI线程显示结果并恢复按钮状态
             javafx.application.Platform.runLater(() -> {
+                // 恢复按钮状态
+                btnTest.setText(originalText);
+                btnTest.setDisable(originalDisabled);
+
+                // 显示测试结果
                 if (result.startsWith("连接成功")) {
                     showInfoAlert(result);
                     LogUtils.info(AIConfigWindow.class, "AI连接测试成功: " + nameField.getText().trim());
@@ -776,6 +843,8 @@ public class AIConfigWindow {
         providerField.clear();
         maxTokensField.setText("2000");
         temperatureField.setText("0.7");
+        connectTimeoutField.setText("30");
+        readTimeoutField.setText("60");
         table.getSelectionModel().clearSelection();
     }
 
